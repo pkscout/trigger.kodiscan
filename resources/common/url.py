@@ -1,6 +1,6 @@
 #v.0.1.6
 
-import requests2 as _requests
+import requests as _requests
 import socket
     
 
