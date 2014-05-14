@@ -1,5 +1,6 @@
 #v.0.1.0
 
+import logging
 try:
     import xbmc
 except:
@@ -7,8 +8,9 @@ except:
 
 #this class creates an object used to log stuff to the xbmc log file
 class Logger():
-    def __init__(self, preamble=''):
+    def __init__(self, preamble='', logfile='logfile'):
         self.logpreamble = preamble
+        self.logfile = logfile
 
 
     def log( self, loglines, loglevel='' ):
@@ -16,7 +18,7 @@ class Logger():
             try:
                 loglevel = xbmc.LOGDEBUG
             except:
-                loglevel = 'echo'
+                loglevel = 'file'
         for line in loglines:
             try:
                 if type(line).__name__=='unicode':
@@ -31,18 +33,19 @@ class Logger():
 
 
     def _output( self, line, loglevel ):
-        if loglevel == 'echo':
-            self._output_echo( line )
+        if loglevel == 'file':
+            self._output_file( line )
         else:
             self_output_xbmc( line, loglevel )
 
                 
-    def _output_echo( self, line ):
+    def _output_file( self, line ):
+        logging.basicConfig(level=logging.DEBUG, filename=self.logfile, filemode="a+", format="%(asctime)-15s %(levelname)-8s %(message)s")
         try:
-            print( "%s %s" % (self.logpreamble, line.__str__()) )
+            logging.info( "%s %s" % (self.logpreamble, line.__str__()) )
         except Exception, e:
-            print( "%s unable to output logline" % self.logpreamble )
-            print( "%s %s" % (self.logpreamble, e.__str__()) )
+            logging.info( "%s unable to output logline" % self.logpreamble )
+            logging.info( "%s %s" % (self.logpreamble, e.__str__()) )
 
 
     def _output_xbmc( self, line, loglevel ):

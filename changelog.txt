@@ -1,2 +1,5 @@
+v.0.1.1
+- added file based logging
+
 v.0.1.0
 - initial coding
