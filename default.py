@@ -4,6 +4,7 @@
 
 
 import argparse, ntpath, os, sys
+from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
 if sys.version_info >= (2, 7):
@@ -21,26 +22,18 @@ p_folderpath = _pathleaf( os.path.realpath(__file__) )['path']
 lw = Logger( logfile = os.path.join( p_folderpath, 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
+
 class Main:
     def __init__( self ):
         self._parse_argv()
-        self._get_settings()
         self._init_vars()
         self._trigger_scan()
         
                 
-    def _get_settings( self ):
-        pass
-
-
     def _init_vars( self ):
-        xbmcuser = 'xbmc'
-        xbmcpass = 'xbmc'
-        xbmcuri = 'localhost'
-        xbmcport = 8081
-        self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (xbmcuser, xbmcpass, xbmcuri, xbmcport)
-        leaf = self._pathleaf( self.FILEPATH )
-        self.FOLDERPATH = leaf['path']
+        import settings as s
+        self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
+        self.FOLDERPATH = _pathleaf( self.FILEPATH )['path']
 
 
     def _parse_argv( self ):
@@ -67,7 +60,6 @@ class Main:
         jsondata = _json.dumps( jsondict )
         success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
         lw.log( loglines )
-
 
 
 if ( __name__ == "__main__" ):
