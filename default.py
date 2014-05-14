@@ -3,7 +3,7 @@
 # *  original Trigger XBMC Scan code by pkscuot
 
 
-import argparse, ntpath, sys
+import argparse, ntpath, os, sys
 from resources.common.xlogger import Logger
 from resources.common.url import URL
 if sys.version_info >= (2, 7):
@@ -12,7 +12,13 @@ else:
     import simplejson as _json
 
 
-lw = Logger()
+def _pathleaf( path ):
+    path, filename = ntpath.split(path)
+    return {"path":path, "filename":filename}
+
+
+p_folderpath = _pathleaf( os.path.realpath(__file__) )['path']
+lw = Logger( logfile = os.path.join( p_folderpath, 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
 class Main:
@@ -50,11 +56,6 @@ class Main:
             lw.log( ['will try and continue with the first argument'] )
             onearg = False
         self.FILEPATH = args.filepath[0]
-
-
-    def _pathleaf( self, path ):
-        path, filename = ntpath.split(path)
-        return {"path":path, "filename":filename}
 
 
     def _trigger_scan( self ):
