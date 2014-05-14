@@ -8,7 +8,7 @@ except:
 
 #this class creates an object used to log stuff to the xbmc log file
 class Logger():
-    def __init__(self, preamble='', logfile='logfile'):
+    def __init__(self, preamble='', logfile='xlogfile.log'):
         self.logpreamble = preamble
         self.logfile = logfile
 
