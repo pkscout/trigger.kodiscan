@@ -31,7 +31,12 @@ class Main:
         
                 
     def _init_vars( self ):
-        import settings as s
+        try:
+            import settings as s
+        except ImportError:
+            err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'settings.py' )
+            lw.log( [err_str] )
+            sys.exit( err_str )
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
         self.FOLDERPATH = _pathleaf( self.FILEPATH )['path']
 
