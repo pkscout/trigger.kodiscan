@@ -1,0 +1,26 @@
+<episodedetails>
+    <title>[DATE]</title>
+    <season>0</season>
+    <episode>[EPNUM]</episode>
+    <plot>The national news.</plot>
+    <playcount>0</playcount>
+    <lastplayed></lastplayed>
+    <aired>[DATE]</aired>
+    <fileinfo>
+      <streamdetails>
+        <audio>
+          <channels>5</channels>
+          <codec>ac3</codec>
+        </audio>
+        <video>
+          <aspect>1.778</aspect>
+          <codec>mpeg2</codec>
+          <durationinseconds>1127040</durationinseconds>
+          <height>1080</height>
+          <language>eng</language>
+          <longlanguage>English</longlanguage>
+          <width>1920</width>
+        </video>
+      </streamdetails>
+    </fileinfo>
+</episodedetails>

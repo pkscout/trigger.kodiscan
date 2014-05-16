@@ -3,7 +3,7 @@
 # *  original Trigger XBMC Scan code by pkscuot
 
 
-import argparse, ntpath, os, sys
+import argparse, datetime, ntpath, os, sys
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -13,12 +13,7 @@ else:
     import simplejson as _json
 
 
-def _pathleaf( path ):
-    path, filename = ntpath.split(path)
-    return {"path":path, "filename":filename}
-
-
-p_folderpath = _pathleaf( os.path.realpath(__file__) )['path']
+p_folderpath, p_filename = ntpath.split( os.path.realpath(__file__) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
@@ -27,6 +22,7 @@ class Main:
     def __init__( self ):
         self._parse_argv()
         self._init_vars()
+        self._fixes()
         self._trigger_scan()
         
                 
@@ -38,7 +34,46 @@ class Main:
             lw.log( [err_str] )
             sys.exit( err_str )
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
-        self.FOLDERPATH = _pathleaf( self.FILEPATH )['path']
+        self.FOLDERPATH, self.FILENAME = ntpath.split( self.FILEPATH )
+
+
+    def _fixes( self ):
+        try:
+            shows = os.listdir( os.path.join( p_folderpath, 'data', 'fixes' ) )
+        except:
+            return
+        lw.log( ['there are potential shows to fix'] )
+        lw.log( shows )
+        throwaway, show = ntpath.split( self.FOLDERPATH )
+        if show in shows:
+            lw.log( ['matched %s with shows to fix' % show] )
+            renamed = False
+            epnum = 1
+            while not renamed:
+                newfileroot = '%s.S00E%s' % (show, str( epnum ).zfill( 2 ))
+                newfilename = newfileroot + '.%s' % self.FILENAME.split( '.')[-1]
+                newnfoname = newfileroot + '.nfo'
+                newfilepath = os.path.join( self.FOLDERPATH, newfilename )
+                if os.path.exists( newfilepath ):
+                    epnum += 1
+                else:
+                    try:
+                        os.rename( self.FILEPATH, os.path.join( self.FOLDERPATH, newfilename ) )
+                    except OSError:
+                        lw.log( ['%s not found, aborting fixes' % self.FILEPATH] )
+                        return
+                    renamed = True
+                    lw.log( ['renamed %s to %s' % (self.FILENAME, newfilename)] )
+                    nfotemplate = os.path.join ( p_folderpath, 'data', 'fixes', show, 'episode.nfo' )
+                    nfo = os.path.join( self.FOLDERPATH, newnfoname )
+                    if os.path.exists( nfo ):
+                        os.remove( nfo )
+                    with open( nfo, "wt" ) as fout:
+                        with open( nfotemplate, "rt" ) as fin:
+                            for line in fin:
+                                templine = line.replace( '[EPNUM]', str( epnum ) )
+                                fout.write( templine.replace( '[DATE]', str( datetime.date.today() ) ) )
+                    lw.log( ['added nfo file %s' % nfo] )
 
 
     def _parse_argv( self ):
