@@ -34,7 +34,7 @@ class Main:
             lw.log( [err_str] )
             sys.exit( err_str )
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
-        self.FOLDERPATH, self.FILENAME = ntpath.split( self.FILEPATH )
+        self.FOLDERPATH, filename = ntpath.split( self.FILEPATH )
 
 
     def _fixes( self ):
@@ -47,33 +47,48 @@ class Main:
         throwaway, show = ntpath.split( self.FOLDERPATH )
         if show in shows:
             lw.log( ['matched %s with shows to fix' % show] )
-            renamed = False
-            epnum = 1
-            while not renamed:
-                newfileroot = '%s.S00E%s' % (show, str( epnum ).zfill( 2 ))
-                newfilename = newfileroot + '.%s' % self.FILENAME.split( '.')[-1]
-                newnfoname = newfileroot + '.nfo'
-                newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                if os.path.exists( newfilepath ):
-                    epnum += 1
+            video_files = []
+            nfo_files = []
+            for item in os.listdir( self.FOLDERPATH ):
+                fileroot, ext = os.path.splitext( item)
+                if ext == '.nfo':
+                    nfo_files.append( fileroot )
                 else:
-                    try:
-                        os.rename( self.FILEPATH, os.path.join( self.FOLDERPATH, newfilename ) )
-                    except OSError:
-                        lw.log( ['%s not found, aborting fixes' % self.FILEPATH] )
-                        return
-                    renamed = True
-                    lw.log( ['renamed %s to %s' % (self.FILENAME, newfilename)] )
-                    nfotemplate = os.path.join ( p_folderpath, 'data', 'fixes', show, 'episode.nfo' )
-                    nfo = os.path.join( self.FOLDERPATH, newnfoname )
-                    if os.path.exists( nfo ):
-                        os.remove( nfo )
-                    with open( nfo, "wt" ) as fout:
-                        with open( nfotemplate, "rt" ) as fin:
-                            for line in fin:
-                                templine = line.replace( '[EPNUM]', str( epnum ) )
-                                fout.write( templine.replace( '[DATE]', str( datetime.date.today() ) ) )
-                    lw.log( ['added nfo file %s' % nfo] )
+                    video_files.append( fileroot )
+            lw.log( ['comparing nfo file list with video file list', 'nfo files:', nfo_files, 'video files:', video_files] )
+            processfiles = []
+            for video_file in video_files:
+                if not video_file in nfo_files:
+                    processfiles.append( video_file + ext )
+            for processfile in processfiles:
+                renamed = False
+                epnum = 1
+                nfotemplate = os.path.join ( p_folderpath, 'data', 'fixes', show, 'episode.nfo' )
+                processfilepath = os.path.join (self.FOLDERPATH, processfile )
+                while not renamed:
+                    newfileroot = '%s.S00E%s' % (show, str( epnum ).zfill( 2 ))
+                    newfilename = newfileroot + '.' + processfile.split( '.')[-1]
+                    newfilepath = os.path.join( self.FOLDERPATH, newfilename )
+                    newnfoname = newfileroot + '.nfo'
+                    newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
+                    if os.path.exists( newfilepath ):
+                        epnum += 1
+                    else:
+                        try:
+                            os.rename( processfilepath, newfilepath )
+                        except OSError:
+                            lw.log( ['%s not found, aborting fixes' % processfilepath] )
+                            return
+                        renamed = True
+                        lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
+                        if os.path.exists( newnfopath ):
+                            os.remove( newnfopath )
+                        with open( newnfopath, "wt" ) as fout:
+                            with open( nfotemplate, "rt" ) as fin:
+                                for line in fin:
+                                    templine = line.replace( '[EPNUM]', str( epnum ) )
+                                    fout.write( templine.replace( '[DATE]', str( datetime.date.today() ) ) )
+                        lw.log( ['added nfo file %s' % newnfopath] )
 
 
     def _parse_argv( self ):
