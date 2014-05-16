@@ -19,7 +19,7 @@ def _pathleaf( path ):
 
 
 p_folderpath = _pathleaf( os.path.realpath(__file__) )['path']
-lw = Logger( logfile = os.path.join( p_folderpath, 'logfile.log' ) )
+lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
 
@@ -32,7 +32,7 @@ class Main:
                 
     def _init_vars( self ):
         try:
-            import settings as s
+            import resources.settings as s
         except ImportError:
             err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'settings.py' )
             lw.log( [err_str] )
