@@ -1,3 +1,6 @@
+v.0.1.5
+- uses video files modification date to determine air date
+
 v.0.1.4
 - now accounts for non-video files in directory
 - doesn't delete tvshow.nfo file

@@ -1,10 +1,10 @@
 # *  Credits:
 # *
-# *  v.0.1.4
+# *  v.0.1.5
 # *  original Trigger XBMC Scan code by pkscuot
 
 
-import argparse, datetime, ntpath, os, sys
+import argparse, time, ntpath, os, sys
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -87,6 +87,15 @@ class Main:
                     if newfileroot in video_files:
                         epnum += 1
                     else:
+                        if os.path.exists( newnfopath ):
+                            os.remove( newnfopath )
+                        with open( newnfopath, "wt" ) as fout:
+                            with open( nfotemplate, "rt" ) as fin:
+                                for line in fin:
+                                    templine = line.replace( '[EPNUM]', str( epnum ) )
+                                    last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
+                                    fout.write( templine.replace( '[DATE]', last_mod ) )
+                        lw.log( ['added nfo file %s' % newnfopath] )
                         try:
                             os.rename( processfilepath, newfilepath )
                         except OSError:
@@ -95,14 +104,6 @@ class Main:
                         renamed = True
                         video_files.append( newfileroot )
                         lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
-                        if os.path.exists( newnfopath ):
-                            os.remove( newnfopath )
-                        with open( newnfopath, "wt" ) as fout:
-                            with open( nfotemplate, "rt" ) as fin:
-                                for line in fin:
-                                    templine = line.replace( '[EPNUM]', str( epnum ) )
-                                    fout.write( templine.replace( '[DATE]', str( datetime.date.today() ) ) )
-                        lw.log( ['added nfo file %s' % newnfopath] )
             
 
 
