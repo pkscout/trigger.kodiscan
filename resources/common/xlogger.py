@@ -1,24 +1,28 @@
 #v.0.1.0
 
-import logging
 try:
     import xbmc
+    LOGTYPE = 'xbmc'
 except:
-    pass
+    import logging, logging.handlers
+    LOGTYPE = 'file'
 
 #this class creates an object used to log stuff to the xbmc log file
 class Logger():
-    def __init__(self, preamble='', logfile='xlogfile.log'):
+    def __init__(self, preamble='', logfile='logfile.log'):
         self.logpreamble = preamble
-        self.logfile = logfile
+        if LOGTYPE == 'file':
+            self.logger = logging.getLogger('_logger')
+            self.logger.setLevel(logging.DEBUG)
+            lr = logging.handlers.TimedRotatingFileHandler( logfile, when='d', interval=1, backupCount=7, encoding=None, delay=False, utc=False )
+            lr.setLevel( logging.DEBUG )
+            lr.setFormatter( logging.Formatter( "%(asctime)-15s %(levelname)-8s %(message)s" ) )
+            self.logger.addHandler( lr )
 
 
     def log( self, loglines, loglevel='' ):
-        if not loglevel:
-            try:
-                loglevel = xbmc.LOGDEBUG
-            except:
-                loglevel = 'file'
+        if LOGTYPE == 'xbmc' and not loglevel:
+            loglevel = xbmc.LOGDEBUG
         for line in loglines:
             try:
                 if type(line).__name__=='unicode':
@@ -33,19 +37,18 @@ class Logger():
 
 
     def _output( self, line, loglevel ):
-        if loglevel == 'file':
+        if LOGTYPE == 'file':
             self._output_file( line )
         else:
-            self_output_xbmc( line, loglevel )
+            self._output_xbmc( line, loglevel )
 
                 
     def _output_file( self, line ):
-        logging.basicConfig(level=logging.DEBUG, filename=self.logfile, filemode="a+", format="%(asctime)-15s %(levelname)-8s %(message)s")
         try:
-            logging.info( "%s %s" % (self.logpreamble, line.__str__()) )
+            self.logger.info( "%s %s" % (self.logpreamble, line.__str__()) )
         except Exception, e:
-            logging.info( "%s unable to output logline" % self.logpreamble )
-            logging.info( "%s %s" % (self.logpreamble, e.__str__()) )
+            self.logger.debug( "%s unable to output logline" % self.logpreamble )
+            self.logger.debug( "%s %s" % (self.logpreamble, e.__str__()) )
 
 
     def _output_xbmc( self, line, loglevel ):
