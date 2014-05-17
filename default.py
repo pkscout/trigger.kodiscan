@@ -1,5 +1,6 @@
 # *  Credits:
 # *
+# *  v.0.1.3
 # *  original Trigger XBMC Scan code by pkscuot
 
 
@@ -28,10 +29,10 @@ class Main:
                 
     def _init_vars( self ):
         try:
-            import resources.settings as s
+            import data.settings as s
         except ImportError:
             err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'settings.py' )
-            lw.log( [err_str] )
+            lw.log( [err_str, 'script stopped'] )
             sys.exit( err_str )
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
         self.FOLDERPATH, filename = ntpath.split( self.FILEPATH )
@@ -49,7 +50,13 @@ class Main:
             lw.log( ['matched %s with shows to fix' % show] )
             video_files = []
             nfo_files = []
-            for item in os.listdir( self.FOLDERPATH ):
+            try:
+                items = os.listdir( self.FOLDERPATH )
+            except OSError:
+                err_str = 'directory %s not found' % self.FOLDERPATH
+                lw.log( [err_str, 'script stopped'] )
+                sys.exit( err_str )
+            for item in items:
                 fileroot, ext = os.path.splitext( item)
                 if ext == '.nfo':
                     nfo_files.append( fileroot )
