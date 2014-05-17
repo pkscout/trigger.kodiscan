@@ -13,10 +13,16 @@ if sys.version_info >= (2, 7):
 else:
     import simplejson as _json
 
-
 p_folderpath, p_filename = ntpath.split( os.path.realpath(__file__) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
+
+try:
+    import data.settings as settings
+except ImportError:
+    err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'data', 'settings.py' )
+    lw.log( [err_str, 'script stopped'] )
+    sys.exit( err_str )
 
 
 class Main:
@@ -28,13 +34,7 @@ class Main:
         
                 
     def _init_vars( self ):
-        try:
-            import data.settings as s
-        except ImportError:
-            err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'data', 'settings.py' )
-            lw.log( [err_str, 'script stopped'] )
-            sys.exit( err_str )
-        self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
+        self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.xbmcuser, settings.xbmcpass, settings.xbmcuri, settings.xbmcport)
         self.FOLDERPATH, filename = ntpath.split( self.FILEPATH )
 
 
@@ -61,7 +61,7 @@ class Main:
                 fileroot, ext = os.path.splitext( item )
                 if ext == '.nfo':
                     nfo_files.append( fileroot )
-                elif ext in {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'} :
+                elif ext in settings.video_exts :
                     video_files.append( fileroot )
                     ext_dict[fileroot] = ext
             lw.log( ['comparing nfo file list with video file list', 'nfo files:', nfo_files, 'video files:', video_files] )
