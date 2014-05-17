@@ -31,7 +31,7 @@ class Main:
         try:
             import data.settings as s
         except ImportError:
-            err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'settings.py' )
+            err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'data', 'settings.py' )
             lw.log( [err_str, 'script stopped'] )
             sys.exit( err_str )
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (s.xbmcuser, s.xbmcpass, s.xbmcuri, s.xbmcport)
