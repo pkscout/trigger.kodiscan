@@ -12,8 +12,8 @@ class Logger():
     def __init__(self, preamble='', logfile='logfile.log'):
         self.logpreamble = preamble
         if LOGTYPE == 'file':
-            self.logger = logging.getLogger('_logger')
-            self.logger.setLevel(logging.DEBUG)
+            self.logger = logging.getLogger( '_logger' )
+            self.logger.setLevel( logging.DEBUG )
             lr = logging.handlers.TimedRotatingFileHandler( logfile, when='d', interval=1, backupCount=7, encoding=None, delay=False, utc=False )
             lr.setLevel( logging.DEBUG )
             lr.setFormatter( logging.Formatter( "%(asctime)-15s %(levelname)-8s %(message)s" ) )
