@@ -1,3 +1,7 @@
+v.0.1.4
+- now accounts for non-video files in directory
+- doesn't delete tvshow.nfo file
+
 v.0.1.3
 - added rolling logs (rolled daily, saved for 7 days)
 - fixed crash if passed folder path doesn't exist

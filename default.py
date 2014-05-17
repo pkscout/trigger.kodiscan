@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.1.3
+# *  v.0.1.4
 # *  original Trigger XBMC Scan code by pkscuot
 
 
@@ -50,6 +50,7 @@ class Main:
             lw.log( ['matched %s with shows to fix' % show] )
             video_files = []
             nfo_files = []
+            ext_dict = {}
             try:
                 items = os.listdir( self.FOLDERPATH )
             except OSError:
@@ -57,16 +58,20 @@ class Main:
                 lw.log( [err_str, 'script stopped'] )
                 sys.exit( err_str )
             for item in items:
-                fileroot, ext = os.path.splitext( item)
+                fileroot, ext = os.path.splitext( item )
                 if ext == '.nfo':
                     nfo_files.append( fileroot )
-                else:
+                elif ext in {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'} :
                     video_files.append( fileroot )
+                    ext_dict[fileroot] = ext
             lw.log( ['comparing nfo file list with video file list', 'nfo files:', nfo_files, 'video files:', video_files] )
+            for nfo_file in nfo_files:
+                if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
+                    os.remove( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
             processfiles = []
             for video_file in video_files:
                 if not video_file in nfo_files:
-                    processfiles.append( video_file + ext )
+                    processfiles.append( video_file + ext_dict[video_file] )
             for processfile in processfiles:
                 renamed = False
                 epnum = 1
@@ -78,7 +83,8 @@ class Main:
                     newfilepath = os.path.join( self.FOLDERPATH, newfilename )
                     newnfoname = newfileroot + '.nfo'
                     newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
-                    if os.path.exists( newfilepath ):
+                    #if os.path.exists( newfilepath ):
+                    if newfileroot in video_files:
                         epnum += 1
                     else:
                         try:
@@ -87,6 +93,7 @@ class Main:
                             lw.log( ['%s not found, aborting fixes' % processfilepath] )
                             return
                         renamed = True
+                        video_files.append( newfileroot )
                         lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
                         if os.path.exists( newnfopath ):
                             os.remove( newnfopath )
@@ -96,6 +103,7 @@ class Main:
                                     templine = line.replace( '[EPNUM]', str( epnum ) )
                                     fout.write( templine.replace( '[DATE]', str( datetime.date.today() ) ) )
                         lw.log( ['added nfo file %s' % newnfopath] )
+            
 
 
     def _parse_argv( self ):
