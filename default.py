@@ -77,8 +77,9 @@ class Main:
                 epnum = 1
                 nfotemplate = os.path.join ( p_folderpath, 'data', 'fixes', show, 'episode.nfo' )
                 processfilepath = os.path.join (self.FOLDERPATH, processfile )
+                last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
                 while not renamed:
-                    newfileroot = '%s.S00E%s' % (show, str( epnum ).zfill( 2 ))
+                    newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), last_mod)
                     newfilename = newfileroot + '.' + processfile.split( '.')[-1]
                     newfilepath = os.path.join( self.FOLDERPATH, newfilename )
                     newnfoname = newfileroot + '.nfo'
@@ -93,7 +94,6 @@ class Main:
                             with open( nfotemplate, "rt" ) as fin:
                                 for line in fin:
                                     templine = line.replace( '[EPNUM]', str( epnum ) )
-                                    last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
                                     fout.write( templine.replace( '[DATE]', last_mod ) )
                         lw.log( ['added nfo file %s' % newnfopath] )
                         try:
