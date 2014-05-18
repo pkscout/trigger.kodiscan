@@ -1,0 +1,38 @@
+{
+    "ep1": {
+        "record-date": "2014-05-10",
+        "season": "02",
+        "episode": "01",
+        "title": "Episode 1"
+    },
+    "ep2": {
+        "record-date": "2014-05-17",
+        "season": "02",
+        "episode": "02",
+        "title": "Episode 2"
+    },
+    "ep3": {
+        "record-date": "2014-05-24",
+        "season": "02",
+        "episode": "03",
+        "title": "Episode 3"
+    },
+    "ep4": {
+        "record-date": "2014-05-31",
+        "season": "02",
+        "episode": "04",
+        "title": "Episode 4"
+    },
+    "ep5": {
+        "record-date": "2014-06-07",
+        "season": "02",
+        "episode": "05",
+        "title": "Episode 5"
+    },
+    "ep6": {
+        "record-date": "2014-06-14",
+        "season": "02",
+        "episode": "06",
+        "title": "Episode 6"
+    }
+}

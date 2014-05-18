@@ -1,3 +1,6 @@
+v.0.1.6
+- added ability to use a json file to rename files to thetvdb format
+
 v.0.1.5
 - uses video files modification date to determine air date
 - moved video extensions list into settings file

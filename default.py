@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.1.5
+# *  v.0.1.6
 # *  original Trigger XBMC Scan code by pkscuot
 
 
@@ -39,8 +39,9 @@ class Main:
 
 
     def _fixes( self ):
+        fixes_dir = os.path.join( p_folderpath, 'data', 'fixes' )
         try:
-            shows = os.listdir( os.path.join( p_folderpath, 'data', 'fixes' ) )
+            shows = os.listdir( fixes_dir )
         except:
             return
         lw.log( ['there are potential shows to fix'] )
@@ -48,63 +49,112 @@ class Main:
         throwaway, show = ntpath.split( self.FOLDERPATH )
         if show in shows:
             lw.log( ['matched %s with shows to fix' % show] )
-            video_files = []
-            nfo_files = []
-            ext_dict = {}
-            try:
-                items = os.listdir( self.FOLDERPATH )
-            except OSError:
-                err_str = 'directory %s not found' % self.FOLDERPATH
-                lw.log( [err_str, 'script stopped'] )
-                sys.exit( err_str )
-            for item in items:
-                fileroot, ext = os.path.splitext( item )
-                if ext == '.nfo':
-                    nfo_files.append( fileroot )
-                elif ext in settings.video_exts :
-                    video_files.append( fileroot )
-                    ext_dict[fileroot] = ext
-            lw.log( ['comparing nfo file list with video file list', 'nfo files:', nfo_files, 'video files:', video_files] )
-            for nfo_file in nfo_files:
-                if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
-                    os.remove( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
-            processfiles = []
-            for video_file in video_files:
-                if not video_file in nfo_files:
-                    processfiles.append( video_file + ext_dict[video_file] )
-            for processfile in processfiles:
-                renamed = False
-                epnum = 1
-                nfotemplate = os.path.join ( p_folderpath, 'data', 'fixes', show, 'episode.nfo' )
-                processfilepath = os.path.join (self.FOLDERPATH, processfile )
-                last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
-                while not renamed:
-                    newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), last_mod)
-                    newfilename = newfileroot + '.' + processfile.split( '.')[-1]
-                    newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                    newnfoname = newfileroot + '.nfo'
-                    newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
-                    #if os.path.exists( newfilepath ):
-                    if newfileroot in video_files:
-                        epnum += 1
-                    else:
-                        if os.path.exists( newnfopath ):
-                            os.remove( newnfopath )
-                        with open( newnfopath, "wt" ) as fout:
-                            with open( nfotemplate, "rt" ) as fin:
-                                for line in fin:
-                                    templine = line.replace( '[EPNUM]', str( epnum ) )
-                                    fout.write( templine.replace( '[DATE]', last_mod ) )
-                        lw.log( ['added nfo file %s' % newnfopath] )
-                        try:
-                            os.rename( processfilepath, newfilepath )
-                        except OSError:
-                            lw.log( ['%s not found, aborting fixes' % processfilepath] )
-                            return
-                        renamed = True
-                        video_files.append( newfileroot )
-                        lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
+            show_fixdir = os.path.join( fixes_dir, show )
+            nfopath = os.path.join( show_fixdir, 'episode.nfo')
+            jsonpath = os.path.join( show_fixdir, 'episode.json')
+            lw.log( ['looking for .nfo template at %s' % nfopath] )
+            lw.log( ['looking for json at %s' % jsonpath] )
+            if os.path.exists( nfopath ):
+               lw.log( ['found .nfo template at %s' % nfotemplate] )
+               self._nfofix( show, nfopath )
+            elif os.path.exists( jsonpath ):
+               lw.log( ['found json info at %s' % jsonpath] )
+               self._jsonfix( show, jsonpath )
+
             
+    def _jsonfix( self, show, jsonpath ):
+        video_files = []
+        nfo_files = []
+        ext_dict = {}
+        try:
+            items = os.listdir( self.FOLDERPATH )
+        except OSError:
+            err_str = 'directory %s not found' % self.FOLDERPATH
+            lw.log( [err_str, 'script stopped'] )
+            sys.exit( err_str )
+        for item in items:
+            fileroot, ext = os.path.splitext( item )
+            processfilepath = os.path.join( self.FOLDERPATH, item )
+            last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
+            if ext in settings.video_exts :
+                jsondata = open( jsonpath )
+                episodes = _json.load( jsondata )
+                jsondata.close()
+                for key in episodes:
+                    episode = episodes[key]
+                    lw.log( ['comparing file last mod of %s with json record date of %s' % (last_mod, episode['record-date'])] )
+                    if last_mod == episode['record-date']:
+                        newfilename = '%s.S%sE%s.%s%s' % (show, episode['season'], episode['episode'], episode['title'], ext)
+                        newfilepath = os.path.join( self.FOLDERPATH, newfilename )
+                        if not os.path.exists( newfilepath ):
+                            try:
+                                os.rename( processfilepath, newfilepath )
+                            except OSError:
+                                lw.log( ['%s not found, aborting fix' % processfilepath] )
+                                break
+                            lw.log( ['renamed %s to %s' % (processfilepath, newfilepath)] )
+                        else:
+                            lw.log( ['%s already has the correct file name' % processfilepath] )
+                        break
+                    
+
+
+    def _nfofix( self, show, nfotemplate ):
+        video_files = []
+        nfo_files = []
+        ext_dict = {}
+        try:
+            items = os.listdir( self.FOLDERPATH )
+        except OSError:
+            err_str = 'directory %s not found' % self.FOLDERPATH
+            lw.log( [err_str, 'script stopped'] )
+            sys.exit( err_str )
+        for item in items:
+            fileroot, ext = os.path.splitext( item )
+            if ext == '.nfo':
+                nfo_files.append( fileroot )
+            elif ext in settings.video_exts :
+                video_files.append( fileroot )
+                ext_dict[fileroot] = ext
+        lw.log( ['comparing nfo file list with video file list'] )
+        lw.log( ['nfo files:', nfo_files, 'video files:', video_files] )
+        for nfo_file in nfo_files:
+            if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
+                os.remove( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
+        processfiles = []
+        for video_file in video_files:
+            if not video_file in nfo_files:
+                processfiles.append( video_file + ext_dict[video_file] )
+        for processfile in processfiles:
+            renamed = False
+            epnum = 1
+            processfilepath = os.path.join (self.FOLDERPATH, processfile )
+            last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
+            while not renamed:
+                newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), last_mod)
+                newfilename = newfileroot + '.' + processfile.split( '.')[-1]
+                newfilepath = os.path.join( self.FOLDERPATH, newfilename )
+                newnfoname = newfileroot + '.nfo'
+                newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
+                if newfileroot in video_files:
+                    epnum += 1
+                else:
+                    if os.path.exists( newnfopath ):
+                        os.remove( newnfopath )
+                    with open( newnfopath, "wt" ) as fout:
+                        with open( nfotemplate, "rt" ) as fin:
+                            for line in fin:
+                                templine = line.replace( '[EPNUM]', str( epnum ) )
+                                fout.write( templine.replace( '[DATE]', last_mod ) )
+                    lw.log( ['added nfo file %s' % newnfopath] )
+                    try:
+                        os.rename( processfilepath, newfilepath )
+                    except OSError:
+                        lw.log( ['%s not found, aborting fix' % processfilepath] )
+                        break
+                    renamed = True
+                    video_files.append( newfileroot )
+                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
 
 
     def _parse_argv( self ):
