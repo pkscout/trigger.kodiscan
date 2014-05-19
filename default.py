@@ -1,19 +1,20 @@
 # *  Credits:
 # *
-# *  v.0.1.7
+# *  v.0.1.8
 # *  original Trigger XBMC Scan code by pkscuot
 
 
-import argparse, time, ntpath, os, sys
+import argparse, time, os, sys
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
+from resources.common.fileops import readFile, writeFile, deleteFile, checkPath
 if sys.version_info >= (2, 7):
     import json as _json
 else:
     import simplejson as _json
 
-p_folderpath, p_filename = ntpath.split( os.path.realpath(__file__) )
+p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
@@ -30,7 +31,7 @@ try:
     settings.xbmcport
     settings.video_exts
 except AttributeError:
-    err_str = 'settings file does not have all required fields'
+    err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 
@@ -45,7 +46,7 @@ class Main:
                 
     def _init_vars( self ):
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.xbmcuser, settings.xbmcpass, settings.xbmcuri, settings.xbmcport)
-        self.FOLDERPATH, filename = ntpath.split( self.FILEPATH )
+        self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
 
 
     def _fixes( self ):
@@ -56,20 +57,21 @@ class Main:
             return
         lw.log( ['there are potential shows to fix'] )
         lw.log( shows )
-        throwaway, show = ntpath.split( self.FOLDERPATH )
+        throwaway, show = os.path.split( self.FOLDERPATH )
         if show in shows:
             lw.log( ['matched %s with shows to fix' % show] )
             show_fixdir = os.path.join( fixes_dir, show )
             nfopath = os.path.join( show_fixdir, 'episode.nfo')
             jsonpath = os.path.join( show_fixdir, 'episode.json')
-            lw.log( ['looking for .nfo template at %s' % nfopath] )
-            lw.log( ['looking for json at %s' % jsonpath] )
-            if os.path.exists( nfopath ):
-               lw.log( ['found .nfo template at %s' % nfopath] )
-               self._nfofix( show, nfopath )
-            elif os.path.exists( jsonpath ):
-               lw.log( ['found json info at %s' % jsonpath] )
+            exists, loglines = checkPath( jsonpath, create=False )
+            lw.log( loglines )
+            if exists:
                self._jsonfix( show, jsonpath )
+               return
+            exists, loglines = checkPath( nfopath, create=False )
+            lw.log( loglines )
+            if exists:
+               self._nfofix( show, nfopath )
 
             
     def _jsonfix( self, show, jsonpath ):
@@ -82,21 +84,23 @@ class Main:
             err_str = 'directory %s not found' % self.FOLDERPATH
             lw.log( [err_str, 'script stopped'] )
             sys.exit( err_str )
+        jsondata = readFile( jsonpath )
+        lw.log( ['-----JSON data-----', jsondata[1]] )
+        episodes = _json.loads( jsondata[1] )
         for item in items:
             fileroot, ext = os.path.splitext( item )
             processfilepath = os.path.join( self.FOLDERPATH, item )
             last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
             if ext in settings.video_exts :
-                jsondata = open( jsonpath )
-                episodes = _json.load( jsondata )
-                jsondata.close()
                 for key in episodes:
                     episode = episodes[key]
                     lw.log( ['comparing file last mod of %s with json record date of %s' % (last_mod, episode['record-date'])] )
                     if last_mod == episode['record-date']:
                         newfilename = '%s.S%sE%s.%s%s' % (show, episode['season'], episode['episode'], episode['title'], ext)
                         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                        if not os.path.exists( newfilepath ):
+                        exists, loglines = checkPath( newfilepath, create=False )
+                        lw.log( loglines )
+                        if not exists:
                             try:
                                 os.rename( processfilepath, newfilepath )
                             except OSError:
@@ -107,7 +111,6 @@ class Main:
                             lw.log( ['%s already has the correct file name' % processfilepath] )
                         break
                     
-
 
     def _nfofix( self, show, nfotemplate ):
         video_files = []
@@ -149,14 +152,21 @@ class Main:
                 if newfileroot in video_files:
                     epnum += 1
                 else:
-                    if os.path.exists( newnfopath ):
-                        os.remove( newnfopath )
-                    with open( newnfopath, "wt" ) as fout:
-                        with open( nfotemplate, "rt" ) as fin:
-                            for line in fin:
-                                templine = line.replace( '[EPNUM]', str( epnum ) )
-                                fout.write( templine.replace( '[DATE]', last_mod ) )
-                    lw.log( ['added nfo file %s' % newnfopath] )
+                    exists, loglines = checkPath( newnfopath, create=False )
+                    lw.log( loglines )
+                    if exists:
+                        success, loglines = deleteFile( newnfopath )
+                        lw.log( loglines )
+                    loglines, fin = readFile( nfotemplate )
+                    lw.log (loglines )
+                    if fin:
+                        newnfo = ''
+                        for line in fin.splitlines( True ):
+                            templine = line.replace( '[EPNUM]', str( epnum ) )
+                            newline = templine.replace( '[DATE]', last_mod )
+                            newnfo = newnfo + newline
+                        success, loglines = writeFile( newnfo, newnfopath )
+                        lw.log( loglines )
                     try:
                         os.rename( processfilepath, newfilepath )
                     except OSError:
@@ -173,12 +183,10 @@ class Main:
         args = parser.parse_args()
         if len( args.filepath ) == 1:
             lw.log( ['got %s from command line' % args.filepath[0] ] )
-            onearg = True
         else:
             lw.log( ['got something strange from the command line'] )
             lw.log( args.filepath )
             lw.log( ['will try and continue with the first argument'] )
-            onearg = False
         self.FILEPATH = args.filepath[0]
 
 

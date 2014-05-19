@@ -1,3 +1,6 @@
+v.0.1.8
+- updated to use author's common libraries
+
 v.0.1.7
 - fix for crash when using .nfo template
 
