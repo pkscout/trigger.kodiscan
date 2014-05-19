@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.1.6
+# *  v.0.1.7
 # *  original Trigger XBMC Scan code by pkscuot
 
 
@@ -21,6 +21,16 @@ try:
     import data.settings as settings
 except ImportError:
     err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'data', 'settings.py' )
+    lw.log( [err_str, 'script stopped'] )
+    sys.exit( err_str )
+try:
+    settings.xbmcuser
+    settings.xbmcpass
+    settings.xbmcuri
+    settings.xbmcport
+    settings.video_exts
+except AttributeError:
+    err_str = 'settings file does not have all required fields'
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 
@@ -55,7 +65,7 @@ class Main:
             lw.log( ['looking for .nfo template at %s' % nfopath] )
             lw.log( ['looking for json at %s' % jsonpath] )
             if os.path.exists( nfopath ):
-               lw.log( ['found .nfo template at %s' % nfotemplate] )
+               lw.log( ['found .nfo template at %s' % nfopath] )
                self._nfofix( show, nfopath )
             elif os.path.exists( jsonpath ):
                lw.log( ['found json info at %s' % jsonpath] )
