@@ -1,10 +1,10 @@
 # *  Credits:
 # *
-# *  v.0.1.8
+# *  v.0.1.9
 # *  original Trigger XBMC Scan code by pkscuot
 
 
-import argparse, time, os, sys
+import argparse, time, os, random, sys
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -197,6 +197,7 @@ class Main:
         jsondict['method'] = "VideoLibrary.Scan"
         jsondict['params'] = {"directory":self.FOLDERPATH}
         jsondata = _json.dumps( jsondict )
+        time.sleep( random.randint( 5, 30 ) )
         success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
         lw.log( loglines )
 

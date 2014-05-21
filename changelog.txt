@@ -1,3 +1,6 @@
+v.0.1.9
+- added random delay before XBMC scan to avoid 2 shows causing an update collision
+
 v.0.1.8
 - updated to use author's common libraries
 
