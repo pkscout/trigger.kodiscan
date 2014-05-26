@@ -1,4 +1,4 @@
-# v.0.3.1
+# v.0.3.2
 
 import os
 try:
@@ -44,9 +44,6 @@ def deleteFile( filename ):
         log_lines.append( '%s does not exist' % filename )
         return False, log_lines
 
-def pathLeaf( path ):
-    path, filename = os.path.split( path )
-    return {"path":path, "filename":filename}
 
 def readFile( filename ):
     log_lines = []
