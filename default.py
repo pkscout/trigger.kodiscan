@@ -203,6 +203,6 @@ class Main:
 
 
 if ( __name__ == "__main__" ):
-    lw.log( ['script started'] )
+    lw.log( ['script started'], 'info' )
     Main()
-lw.log( ['script stopped'] )
+lw.log( ['script stopped'], 'info' )
