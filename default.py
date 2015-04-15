@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.2.0
+# *  v.0.2.2
 # *  original Trigger XBMC Scan code by pkscuot
 
 
@@ -58,7 +58,7 @@ class Main:
         lw.log( ['there are potential shows to fix'] )
         lw.log( shows )
         throwaway, show = os.path.split( self.FOLDERPATH )
-        if show in shows:
+        if show.lower() in map( str.lower, shows ):
             lw.log( ['matched %s with shows to fix' % show] )
             show_fixdir = os.path.join( fixes_dir, show )
             nfopath = os.path.join( show_fixdir, 'episode.nfo')
@@ -138,9 +138,9 @@ class Main:
         for video_file in video_files:
             if not video_file in nfo_files:
                 processfiles.append( video_file + ext_dict[video_file] )
+        epnum = len( video_files )
         for processfile in processfiles:
             renamed = False
-            epnum = 1
             processfilepath = os.path.join (self.FOLDERPATH, processfile )
             last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
             while not renamed:
@@ -149,9 +149,7 @@ class Main:
                 newfilepath = os.path.join( self.FOLDERPATH, newfilename )
                 newnfoname = newfileroot + '.nfo'
                 newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
-                if newfileroot in video_files:
-                    epnum += 1
-                else:
+                if not newfileroot in video_files:
                     exists, loglines = checkPath( newnfopath, create=False )
                     lw.log( loglines )
                     if exists:
@@ -175,6 +173,8 @@ class Main:
                     renamed = True
                     video_files.append( newfileroot )
                     lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
+                epnum += 1
+
 
 
     def _parse_argv( self ):
