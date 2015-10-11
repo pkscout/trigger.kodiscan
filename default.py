@@ -161,7 +161,8 @@ class Main:
                         newnfo = ''
                         for line in fin.splitlines( True ):
                             templine = line.replace( '[EPNUM]', str( epnum ) )
-                            newline = templine.replace( '[DATE]', last_mod )
+                            templine2 = templine.replace ( '[TITLE]', self.EPISODETITLE )
+                            newline = templine2.replace( '[DATE]', last_mod )
                             newnfo = newnfo + newline
                         success, loglines = writeFile( newnfo, newnfopath )
                         lw.log( loglines )
@@ -179,15 +180,17 @@ class Main:
 
     def _parse_argv( self ):
         parser = argparse.ArgumentParser()
-        parser.add_argument( "filepath", help="path to the video file (including file name)", nargs="+" )
+        parser.add_argument( "theargs", help="path to the video file (including file name) and title of episode", nargs="+" )
         args = parser.parse_args()
-        if len( args.filepath ) == 1:
-            lw.log( ['got %s from command line' % args.filepath[0] ] )
+        if len( args.theargs ) == 2:
+            lw.log( ['got %s from command line' % args.theargs[0] ] )
+            lw.log( ['got %s from command line' % args.theargs[1] ] )
         else:
             lw.log( ['got something strange from the command line'] )
-            lw.log( args.filepath )
-            lw.log( ['will try and continue with the first argument'] )
-        self.FILEPATH = args.filepath[0]
+            lw.log( args.theargs )
+            lw.log( ['will try and continue with the first two arguments'] )
+        self.FILEPATH = args.theargs[0]
+        self.EPISODETITLE = args.theargs[1]
 
 
     def _trigger_scan( self ):

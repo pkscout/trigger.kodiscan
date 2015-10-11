@@ -1,3 +1,6 @@
+v.0.2.3
+- added show title replacement in .nfo fix
+
 v.0.2.2
 - fix for .nfo based shows starting with E02
 

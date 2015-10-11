@@ -29,7 +29,7 @@ In the data directory, rename settings-example.py to settings.py.  Edit that fil
 Usage:
 The best thing to do is add the following line to you PostPRocessing.bat file in the NPVR Scripts directory:
 
-"C:\Python27\python.exe" "C:\CustomApps\trigger.xbmcscan\default.py" %1
+"C:\Python27\python.exe" "C:\CustomApps\trigger.xbmcscan\default.py" %1 %5
 
 Please change the python call to match the location of your python install.  Note that even if you have python in the system path, calling the script with just "python" doesn't seem to work.
 
@@ -42,6 +42,7 @@ In a few cases imageGrabLite wasn't very good at renaming file (mostly the local
 The show folder needs a file called episode.nfo. That file is a template for the .nfo file the script will create so that XBMC scans the show correctly.  You can put any of the XBMC related information in that template you'd like.  When you look at the sample episode.nfo file, you'll see that there are two placeholders that the script will insert at runtime:
     [DATE] this is the last modification date of the file in question.
     [EPNUM] the next available S00Exx number available for use in this directory.
+    [TITLE] the title of the episode as passed in by NextPVR.
 In the sample template [DATE] is used both in the title and airdate field assuming the things to be renamed are all daily shows.  See the NBC Nightly News folder as an example.
 ---Renaming using a json file:
 The show folder needs a file called episode.json.  That file contains some data needed to rename the file so that XBMC can find it on thetvdb.com.  The basic format of the json file is:
