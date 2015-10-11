@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.2.2
+# *  v.0.2.3
 # *  original Trigger XBMC Scan code by pkscuot
 
 
