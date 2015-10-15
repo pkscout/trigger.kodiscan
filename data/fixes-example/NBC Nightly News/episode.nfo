@@ -1,21 +1,21 @@
 <episodedetails>
-    <title>[DATE]</title>
-    <season>0</season>
-    <episode>[EPNUM]</episode>
+    <title>[AIRDATE]</title>
+    <season>[SEASON]</season>
+    <episode>[EPISODE]</episode>
     <plot>The national news.</plot>
     <playcount>0</playcount>
     <lastplayed></lastplayed>
-    <aired>[DATE]</aired>
+    <aired>[AIRDATE]</aired>
     <fileinfo>
       <streamdetails>
         <audio>
-          <channels>5</channels>
+          <channels>[CHANNELS]</channels>
           <codec>ac3</codec>
         </audio>
         <video>
           <aspect>1.778</aspect>
           <codec>mpeg2</codec>
-          <durationinseconds>1127040</durationinseconds>
+          <durationinseconds>[DURATION]</durationinseconds>
           <height>1080</height>
           <language>eng</language>
           <longlanguage>English</longlanguage>

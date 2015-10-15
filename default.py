@@ -1,14 +1,15 @@
 # *  Credits:
 # *
-# *  v.0.2.3
-# *  original Trigger XBMC Scan code by pkscuot
+# *  v.0.3.0
+# *  original Trigger XBMC Scan code by pkscout
 
 
-import argparse, time, os, random, sys
+import argparse, datetime, os, random, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
 from resources.common.fileops import readFile, writeFile, deleteFile, checkPath
+from resources.common.transforms import replaceWords
 if sys.version_info >= (2, 7):
     import json as _json
 else:
@@ -30,6 +31,7 @@ try:
     settings.xbmcuri
     settings.xbmcport
     settings.video_exts
+    settings.db_loc
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
     lw.log( [err_str, 'script stopped'] )
@@ -46,8 +48,17 @@ class Main:
                 
     def _init_vars( self ):
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.xbmcuser, settings.xbmcpass, settings.xbmcuri, settings.xbmcport)
+        #get all the data about the recording from the NPVR database
+        db = sqlite3.connect(settings.db_loc)
+        cursor = db.cursor()
+        cursor.execute( '''SELECT filename, event_details from SCHEDULED_RECORDING WHERE oid=?''', ( self.OID, ) )
+        recording_info = cursor.fetchone()
+        db.close()
+        self.FILEPATH = recording_info[0]
+        self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
+        lw.log( [self.EVENT_DETAILS] )
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
-
+             
 
     def _fixes( self ):
         fixes_dir = os.path.join( p_folderpath, 'data', 'fixes' )
@@ -134,6 +145,80 @@ class Main:
         for nfo_file in nfo_files:
             if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
                 os.remove( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
+        ep_info = {}
+        try:
+            ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
+            ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
+            has_season_ep = True
+        except KeyError:
+            ep_info['season'] = '0'
+            ep_info['episode'] = ''
+            has_season_ep = False
+        try:
+            ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
+        except KeyError:
+            ep_info['title'] = ''
+        try:
+            ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
+        except KeyError:
+            ep_info['description'] = ''
+        try:
+            audio = self.EVENT_DETAILS["Event"]["Audio"]
+            if audio == "stereo":
+                ep_info['channels'] = '2'
+            elif audio == "DD 5.1":
+                ep_info['channels'] = '5'
+            elif audio == "DD 4.1":
+                ep_info['channels'] = '4'
+            else:
+                ep_info['channels'] = ''            
+        except KeyError:
+            ep_info['channels'] = ''
+        try:
+            start_time = datetime.datetime.strptime( self.EVENT_DETAILS["Event"]["StartTime"], "%Y-%m-%dT%I:%M:%S.%f0Z" )
+            end_time = datetime.datetime.strptime( self.EVENT_DETAILS["Event"]["EndTime"], "%Y-%m-%dT%I:%M:%S.%f0Z" )
+            duration = end_time - start_time
+            ep_info['duration'] = str( int( duration.total_seconds() ) )
+            ep_info['airdate'] = self.EVENT_DETAILS["Event"]["StartTime"][0:10]
+        except KeyError:
+            ep_info['duration'] = ''
+            ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
+        lw.log( [ep_info] )       
+        if has_season_ep:
+            self._regularseason( show, nfotemplate, ep_info )
+        else:
+            self._specialseason( video_files, nfo_files, ext_dict, show, nfotemplate, ep_info )
+
+
+    def _write_nfofile( self, nfotemplate, ep_info, newnfoname ):
+        newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
+        replacement_dic = {
+            '[SEASON]': ep_info['season'],
+            '[EPISODE]' : ep_info['episode'],
+            '[TITLE]' : ep_info['title'],
+            '[DESC]' : ep_info['description'],
+            '[AIRDATE]' : ep_info["airdate"],
+            '[CHANNELS]' : ep_info['channels'],
+            '[DURATION]' : ep_info['duration']}
+        exists, loglines = checkPath( newnfopath, create=False )
+        lw.log( loglines )
+        if exists:
+            success, loglines = deleteFile( newnfopath )
+            lw.log( loglines )
+        loglines, fin = readFile( nfotemplate )
+        lw.log (loglines )
+        if fin:
+            newnfo = replaceWords( fin, replacement_dic )
+            success, loglines = writeFile( newnfo, newnfopath )
+            lw.log( loglines )
+
+
+    def _regularseason( self, show, nfotemplate, ep_info ):
+        newnfoname = os.path.splitext( self.FILEPATH )[0] + '.nfo'
+        self._write_nfofile( nfotemplate, ep_info, newnfoname )
+
+
+    def _specialseason( self, video_files, nfo_files, ext_dict, show, nfotemplate, ep_info ):
         processfiles = []
         for video_file in video_files:
             if not video_file in nfo_files:
@@ -142,30 +227,14 @@ class Main:
         for processfile in processfiles:
             renamed = False
             processfilepath = os.path.join (self.FOLDERPATH, processfile )
-            last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
             while not renamed:
-                newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), last_mod)
+                newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), ep_info["airdate"])
                 newfilename = newfileroot + '.' + processfile.split( '.')[-1]
                 newfilepath = os.path.join( self.FOLDERPATH, newfilename )
                 newnfoname = newfileroot + '.nfo'
-                newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
                 if not newfileroot in video_files:
-                    exists, loglines = checkPath( newnfopath, create=False )
-                    lw.log( loglines )
-                    if exists:
-                        success, loglines = deleteFile( newnfopath )
-                        lw.log( loglines )
-                    loglines, fin = readFile( nfotemplate )
-                    lw.log (loglines )
-                    if fin:
-                        newnfo = ''
-                        for line in fin.splitlines( True ):
-                            templine = line.replace( '[EPNUM]', str( epnum ) )
-                            templine2 = templine.replace ( '[TITLE]', self.EPISODETITLE )
-                            newline = templine2.replace( '[DATE]', last_mod )
-                            newnfo = newnfo + newline
-                        success, loglines = writeFile( newnfo, newnfopath )
-                        lw.log( loglines )
+                    ep_info['episode'] = str( epnum )
+                    self._write_nfofile( nfotemplate, ep_info, newnfoname )
                     try:
                         os.rename( processfilepath, newfilepath )
                     except OSError:
@@ -173,24 +242,26 @@ class Main:
                         break
                     renamed = True
                     video_files.append( newfileroot )
-                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
+                    db = sqlite3.connect(settings.db_loc)
+                    cursor = db.cursor()
+                    cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
+                    db.commit()
+                    db.close()
+                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )                   
                 epnum += 1
-
 
 
     def _parse_argv( self ):
         parser = argparse.ArgumentParser()
-        parser.add_argument( "theargs", help="path to the video file (including file name) and title of episode", nargs="+" )
+        parser.add_argument( "theargs", help="the OID of the recording as passed by NPVR", nargs="+" )
         args = parser.parse_args()
-        if len( args.theargs ) == 2:
+        if len( args.theargs ) == 1:
             lw.log( ['got %s from command line' % args.theargs[0] ] )
-            lw.log( ['got %s from command line' % args.theargs[1] ] )
         else:
             lw.log( ['got something strange from the command line'] )
             lw.log( args.theargs )
-            lw.log( ['will try and continue with the first two arguments'] )
-        self.FILEPATH = args.theargs[0]
-        self.EPISODETITLE = args.theargs[1]
+            lw.log( ['will try and continue with the first argument'] )
+        self.OID = args.theargs[0]
 
 
     def _trigger_scan( self ):
