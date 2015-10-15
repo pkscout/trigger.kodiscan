@@ -45,9 +45,9 @@ The show folder needs a file called episode.nfo. That file is a template for the
     [EPISODE] the episode number of the show (will be a sequential number if season is 0)
     [TITLE] the title of the episode as passed in by NextPVR.
     [DESC] the description from the NextPVR database.
-    [AIRDATE] the date of the recording (or last mod date of the file if recording date not available).
+    [AIRDATE] the last modification date of the recording file.
     [CHANNELS] the audio channels available in the recording.    
-    [DURATION] the duration of the recording (empty if start and end recording date not available)
+    [DURATION] the duration of the recording (empty if start and end recording dates not available)
 
 
 In the sample template [DATE] is used both in the title and airdate field because it's a daily show with no episode title.  See the NBC Nightly News folder as an example.

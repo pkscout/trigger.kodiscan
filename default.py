@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.0
+# *  v.0.3.1
 # *  original Trigger XBMC Scan code by pkscout
 
 
@@ -179,10 +179,9 @@ class Main:
             end_time = datetime.datetime.strptime( self.EVENT_DETAILS["Event"]["EndTime"], "%Y-%m-%dT%I:%M:%S.%f0Z" )
             duration = end_time - start_time
             ep_info['duration'] = str( int( duration.total_seconds() ) )
-            ep_info['airdate'] = self.EVENT_DETAILS["Event"]["StartTime"][0:10]
         except KeyError:
             ep_info['duration'] = ''
-            ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
+        ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
         if has_season_ep:
             self._regularseason( show, nfotemplate, ep_info )

@@ -1,3 +1,11 @@
+v.0.3.1
+- stopped using airdate from NPVR database, went back to using mod date of file
+
+v.0.3.0
+- now using information from NPVR database for additional merge fields
+- write changed file name back to the NPVR database
+- call in PostProcessing.bat now uses OID instead of file name
+
 v.0.2.3
 - added show title replacement in .nfo fix
 
