@@ -11,7 +11,7 @@ xbmcport = 8080
 
 # the path to the NextPVR database (including the actual database file)
 # you shouldn't need to change this unless you have a non-standard NPVR install
-db_loc = 'C:\Users\Public\NPVR\npvr.db3'
+db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
 
 # the extensions the script considers video files
