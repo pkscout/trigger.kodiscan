@@ -1,3 +1,7 @@
+v.0.3.2
+- removed [CHANNELS] and [DURATION] replaces, as Kodi seems to scan the file for these
+- added some additional error checking around the database connection
+
 v.0.3.1
 - stopped using airdate from NPVR database, went back to using mod date of file
 

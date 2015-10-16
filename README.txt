@@ -39,6 +39,7 @@ You can call the script directly from the command prompt, you just have to pass 
 
 Fixing File Names:
 This script will do some very basic renaming and add an info file for shows you specify.  In the script's data directory you can rename fixes-example to fixes.  In that folder you place another folder that exactly matches the name of your show (NBC Nightly News and In the Flesh are included as samples).
+
 ---Renaming using a .nfo template:
 The show folder needs a file called episode.nfo. That file is a template for the .nfo file the script will create so that XBMC scans the show correctly.  You can put any of the XBMC related information in that template you'd like.  When you look at the sample episode.nfo file, you'll see that there some placeholders that the script will insert at runtime:
     [SEASON] the season number of the show (will be zero if no season number was in the NextPVR database)
@@ -46,11 +47,9 @@ The show folder needs a file called episode.nfo. That file is a template for the
     [TITLE] the title of the episode as passed in by NextPVR.
     [DESC] the description from the NextPVR database.
     [AIRDATE] the last modification date of the recording file.
-    [CHANNELS] the audio channels available in the recording.    
-    [DURATION] the duration of the recording (empty if start and end recording dates not available)
-
 
 In the sample template [DATE] is used both in the title and airdate field because it's a daily show with no episode title.  See the NBC Nightly News folder as an example.
+
 ---Renaming using a json file:
 The show folder needs a file called episode.json.  That file contains some data needed to rename the file so that XBMC can find it on thetvdb.com.  The basic format of the json file is:
 {
@@ -67,6 +66,7 @@ The show folder needs a file called episode.json.  That file contains some data 
         "title": "Episode 2"
     }
 }
+
 There are two things to remember with the data in this file.  "ep1", "ep2", etc need to be unique for each record.  If you continue the naming format (i.e. "ep3", "ep4", etc.) you will be fine.  The record-date must be in the format yyyy-mm-dd and refers to the date on which you will be recording the episode.  This may or may not be the date the show aired according to thetvdb.com.  For instance, In the Flesh airs a week later on BBC America, and thetvdb.com data has the airdate set based on the BBC showing.  For the renaming to work if you recorded off BBC America, the json file for In the Flesh needs the dates the show is actually recorded instead of the BBC dates.
 
 

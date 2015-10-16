@@ -6,21 +6,4 @@
     <playcount>0</playcount>
     <lastplayed></lastplayed>
     <aired>[AIRDATE]</aired>
-    <fileinfo>
-      <streamdetails>
-        <audio>
-          <channels>[CHANNELS]</channels>
-          <codec>ac3</codec>
-        </audio>
-        <video>
-          <aspect>1.778</aspect>
-          <codec>mpeg2</codec>
-          <durationinseconds>[DURATION]</durationinseconds>
-          <height>1080</height>
-          <language>eng</language>
-          <longlanguage>English</longlanguage>
-          <width>1920</width>
-        </video>
-      </streamdetails>
-    </fileinfo>
 </episodedetails>
