@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.2
+# *  v.0.3.3
 # *  original Trigger XBMC Scan code by pkscout
 
 
@@ -129,6 +129,7 @@ class Main:
                                 lw.log( ['%s not found, aborting fix' % processfilepath] )
                                 break
                             lw.log( ['renamed %s to %s' % (processfilepath, newfilepath)] )
+                            self._update_db( newfilepath )
                         else:
                             lw.log( ['%s already has the correct file name' % processfilepath] )
                         break
@@ -223,12 +224,8 @@ class Main:
                         break
                     renamed = True
                     video_files.append( newfileroot )
-                    db = sqlite3.connect(settings.db_loc)
-                    cursor = db.cursor()
-                    cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
-                    db.commit()
-                    db.close()
-                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )                   
+                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
+                    self._update_db( newfilepath )
                 epnum += 1
 
 
@@ -242,6 +239,15 @@ class Main:
         time.sleep( random.randint( 5, 30 ) )
         success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
         lw.log( loglines )
+
+
+    def _update_db( self, newfilepath ):
+        db = sqlite3.connect(settings.db_loc)
+        cursor = db.cursor()
+        cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
+        db.commit()
+        db.close()
+        lw.log( ['updated filename of %s to %s' % (self.OID, newfilename)] )                   
 
 
     def _write_nfofile( self, nfotemplate, ep_info, newnfoname ):
