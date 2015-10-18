@@ -247,7 +247,7 @@ class Main:
         cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
         db.commit()
         db.close()
-        lw.log( ['updated filename of %s to %s' % (self.OID, newfilename)] )                   
+        lw.log( ['updated NPVR filename of OID %s to %s' % (self.OID, newfilepath)] )                   
 
 
     def _write_nfofile( self, nfotemplate, ep_info, newnfoname ):
