@@ -9,10 +9,14 @@ xbmcpass = 'xbmc'
 xbmcuri = 'localhost'
 xbmcport = 8080
 
+# the extensions the script considers video files
+video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}
+
+# these are the extensions of files that should be deleted if no matching video file is found
+delete_exts = {'.nfo', '-thumb.jpg', '-thumb.png'}
+
 # the path to the NextPVR database (including the actual database file)
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
 
-# the extensions the script considers video files
-video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}

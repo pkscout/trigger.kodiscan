@@ -31,6 +31,7 @@ try:
     settings.xbmcuri
     settings.xbmcport
     settings.video_exts
+    settings.delete_exts
     settings.db_loc
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
@@ -156,12 +157,10 @@ class Main:
         lw.log( ['nfo files:', nfo_files, 'video files:', video_files] )
         for nfo_file in nfo_files:
             if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
-                #this deletes the nfo file
-                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
-                lw.log( loglines )
-                #this deletes the video thumbnail
-                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, nfo_file + '-thumb.jpg' ) )
-                lw.log( loglines )                
+                delete_path = os.path.join( self.FOLDERPATH, nfo_file )
+                for one_ext in settings.delete_exts:
+                    success, loglines = deleteFile( delete_path + one_ext ) )
+                    lw.log( loglines )
         ep_info = {}
         try:
             ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]

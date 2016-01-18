@@ -1,6 +1,5 @@
 v.0.3.4
-- fixed deletion of orphan nfo files
-- added deletion of orphan video thumb files
+- added option in settings to delete various orphan files if video file not found
 - changed name to reflect change in XBMC name to Kodi
 
 v.0.3.3
