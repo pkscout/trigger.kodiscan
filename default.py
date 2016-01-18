@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.4
+# *  v.0.3.5
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -73,6 +73,7 @@ class Main:
 
 
     def _fixes( self ):
+        found_show = False
         fixes_dir = os.path.join( p_folderpath, 'data', 'fixes' )
         try:
             shows = os.listdir( fixes_dir )
@@ -84,6 +85,12 @@ class Main:
         if show.lower() in map( str.lower, shows ):
             lw.log( ['matched %s with shows to fix' % show] )
             show_fixdir = os.path.join( fixes_dir, show )
+            found_show = True
+        elif "default" in map( str.lower, shows ):
+            lw.log( ['found default fix, applying to %s' % show] )
+            show_fixdir = os.path.join( fixes_dir, 'default' )
+            found_show = True
+        if found_show:            
             nfopath = os.path.join( show_fixdir, 'episode.nfo')
             jsonpath = os.path.join( show_fixdir, 'episode.json')
             exists, loglines = checkPath( jsonpath, create=False )

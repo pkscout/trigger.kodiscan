@@ -38,7 +38,7 @@ You can call the script directly from the command prompt, you just have to pass 
 
 
 Fixing File Names:
-This script will do some very basic renaming and add an info file for shows you specify.  In the script's data directory you can rename fixes-example to fixes.  In that folder you place another folder that exactly matches the name of your show (NBC Nightly News and In the Flesh are included as samples).
+This script will do some very basic renaming and add an info file for shows you specify.  In the script's data directory you can rename fixes-example to fixes.  In that folder you place another folder that exactly matches the name of your show (NBC Nightly News and In the Flesh are included as samples).  You can also use a folder named 'default' (all lowercase).  That fix will be applied to all shows (unless there is a separate show directory).
 
 ---Renaming using a .nfo template:
 The show folder needs a file called episode.nfo. That file is a template for the .nfo file the script will create so that XBMC scans the show correctly.  You can put any of the XBMC related information in that template you'd like.  When you look at the sample episode.nfo file, you'll see that there some placeholders that the script will insert at runtime:
