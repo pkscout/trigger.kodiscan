@@ -1,3 +1,8 @@
+v.0.3.4
+- fixed deletion of orphan nfo files
+- added deletion of orphan video thumb files
+- changed name to reflect change in XBMC name to Kodi
+
 v.0.3.3
 - added db update to JSON fix
 

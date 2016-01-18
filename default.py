@@ -1,7 +1,7 @@
 # *  Credits:
 # *
-# *  v.0.3.3
-# *  original Trigger XBMC Scan code by pkscout
+# *  v.0.3.4
+# *  original Trigger Kodi Scan code by pkscout
 
 
 import argparse, datetime, os, random, sqlite3, sys, time, xmltodict
@@ -156,7 +156,12 @@ class Main:
         lw.log( ['nfo files:', nfo_files, 'video files:', video_files] )
         for nfo_file in nfo_files:
             if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
-                os.remove( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
+                #this deletes the nfo file
+                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, nfo_file + '.nfo' ) )
+                lw.log( loglines )
+                #this deletes the video thumbnail
+                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, nfo_file + '-thumb.jpg' ) )
+                lw.log( loglines )                
         ep_info = {}
         try:
             ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
