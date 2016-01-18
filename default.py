@@ -159,7 +159,7 @@ class Main:
             if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
                 delete_path = os.path.join( self.FOLDERPATH, nfo_file )
                 for one_ext in settings.delete_exts:
-                    success, loglines = deleteFile( delete_path + one_ext ) )
+                    success, loglines = deleteFile( delete_path + one_ext )
                     lw.log( loglines )
         ep_info = {}
         try:
