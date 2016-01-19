@@ -9,8 +9,14 @@ xbmcpass = 'xbmc'
 xbmcuri = 'localhost'
 xbmcport = 8080
 
-# the extensions the script considers video files
+# the extensions the script uses for video files
 video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}
+
+# the extensions the script uses for thumbnail files
+thumb_exts = {'.png', '.jpg'}
+
+# these are thumb endings that need to be renamed to the Kodi standard -thumb
+rename_ends = {'-thumbs'}
 
 # these are the extensions of files that should be deleted if no matching video file is found
 delete_exts = {'.nfo', '-thumb.jpg', '-thumb.png'}

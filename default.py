@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.5
+# *  v.0.3.6
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -32,6 +32,8 @@ try:
     settings.xbmcport
     settings.video_exts
     settings.delete_exts
+    settings.thumb_exts
+    settings.rename_ends
     settings.db_loc
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
@@ -160,6 +162,12 @@ class Main:
             elif ext in settings.video_exts :
                 video_files.append( fileroot )
                 ext_dict[fileroot] = ext
+            elif ext in settings.thumb_exts:
+                for rename_end in settings.rename_ends:
+                    if fileroot.endswith( rename_end ):
+                        old_thumb = os.path.join( self.FOLDERPATH, item )
+                        new_thumb = os.path.join( self.FOLDERPATH, fileroot[:-len( rename_end )] + '-thumb' + ext )
+                        os.rename( old_thumb, new_thumb )
         lw.log( ['comparing nfo file list with video file list'] )
         lw.log( ['nfo files:', nfo_files, 'video files:', video_files] )
         for nfo_file in nfo_files:

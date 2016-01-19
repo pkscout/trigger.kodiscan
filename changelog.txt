@@ -1,3 +1,6 @@
+v.0.3.6
+- added ability to specify thumb endings to be renamed to Kodi standard
+
 v.0.3.5
 - added option to have a default fix applied to all shows
 
