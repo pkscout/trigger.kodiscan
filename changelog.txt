@@ -1,3 +1,6 @@
+v.0.3.9
+- fixed special season logic
+
 v.0.3.8
 - moved to abstracted function to rename file
 

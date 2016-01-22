@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.8
+# *  v.0.3.9
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -202,7 +202,7 @@ class Main:
         if has_season_ep:
             self._regularseason( show, nfotemplate, ep_info )
         else:
-            self._specialseason( video_files, nfo_files, ext_dict, show, nfotemplate, ep_info )
+            self._specialseason( video_files, other_files, show, nfotemplate, ep_info )
 
 
     def _regularseason( self, show, nfotemplate, ep_info ):
@@ -223,11 +223,17 @@ class Main:
         self.OID = args.theargs[0]
 
 
-    def _specialseason( self, video_files, nfo_files, ext_dict, show, nfotemplate, ep_info ):
+    def _specialseason( self, video_files, other_files, show, nfotemplate, ep_info ):
         processfiles = []
         for video_file in video_files:
-            if not video_file in nfo_files:
-                processfiles.append( video_file + ext_dict[video_file] )
+            video_name, throwaway = os.path.splitext( video_file )
+            if len (other_files) == 0:
+                processfiles.append( video_file )
+            for one_file in other_files:
+                file_name, ext = os.path.splitext( one_file )
+                if (not file_name == video_name) and (ext == '.nfo'):
+                    processfiles.append( video_file )
+                    break
         epnum = len( video_files )
         for processfile in processfiles:
             renamed = False
