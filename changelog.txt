@@ -1,3 +1,6 @@
+v.0.3.7
+- improved cleanup routine 
+
 v.0.3.6
 - added ability to specify thumb endings to be renamed to Kodi standard
 

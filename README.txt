@@ -24,7 +24,7 @@ In SYSTEM->SETTINGS->SERVICES->WEBSERVER
 In SYSTEM->SETTINGS->SERVICES->REMOTE CONTROL:
   a. enable "Allow programs on this system to control XBMC.
 ---Script settings:
-In the data directory, rename settings-example.py to settings.py.  Edit that file and put in the user name and password you set above.  If you changed the port, make sure the settings.py file has that port number.  If your NextPVR database is in a non-standard location, make that change as needed.  The last line of the settings file is a list of extensions the script will consider as video files.  If you're using a video extension not in this list, you can just add it at the end.
+In the data directory, rename settings-example.py to settings.py.  Edit that file and put in the user name and password you set above.  If you changed the port, make sure the settings.py file has that port number.  If your NextPVR database is in a non-standard location, make that change as needed.  For most people, all the other settings should be fine as is, but you can make changes as needed.
 
 
 Usage:

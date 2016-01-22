@@ -15,11 +15,14 @@ video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}
 # the extensions the script uses for thumbnail files
 thumb_exts = {'.png', '.jpg'}
 
-# these are thumb endings that need to be renamed to the Kodi standard -thumb
+# this is what should be at the end of a filename to designate as a thumbnail
+thumb_end = '-thumb'
+
+# these are thumb endings that need to be renamed to the setting above
 rename_ends = {'-thumbs'}
 
-# these are the extensions of files that should be deleted if no matching video file is found
-delete_exts = {'.nfo', '-thumb.jpg', '-thumb.png'}
+# these are files that should never be deleted
+protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'banner.png', 'fanart.jpg', 'fanart.png', 'folder.jpg', 'folder.png'}
 
 # the path to the NextPVR database (including the actual database file)
 # you shouldn't need to change this unless you have a non-standard NPVR install

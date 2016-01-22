@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.6
+# *  v.0.3.7
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -31,9 +31,10 @@ try:
     settings.xbmcuri
     settings.xbmcport
     settings.video_exts
-    settings.delete_exts
     settings.thumb_exts
+    settings.thumb_end
     settings.rename_ends
+    settings.protected_files
     settings.db_loc
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
@@ -147,8 +148,7 @@ class Main:
 
     def _nfofix( self, show, nfotemplate ):
         video_files = []
-        nfo_files = []
-        ext_dict = {}
+        other_files = []
         try:
             items = os.listdir( self.FOLDERPATH )
         except OSError:
@@ -157,25 +157,31 @@ class Main:
             sys.exit( err_str )
         for item in items:
             fileroot, ext = os.path.splitext( item )
-            if ext == '.nfo':
-                nfo_files.append( fileroot )
-            elif ext in settings.video_exts :
-                video_files.append( fileroot )
-                ext_dict[fileroot] = ext
-            elif ext in settings.thumb_exts:
+            if ext in settings.thumb_exts:
                 for rename_end in settings.rename_ends:
                     if fileroot.endswith( rename_end ):
                         old_thumb = os.path.join( self.FOLDERPATH, item )
-                        new_thumb = os.path.join( self.FOLDERPATH, fileroot[:-len( rename_end )] + '-thumb' + ext )
+                        item = fileroot[:-len( rename_end )] + settings.thumb_end + ext
+                        new_thumb = os.path.join( self.FOLDERPATH, item )
                         os.rename( old_thumb, new_thumb )
-        lw.log( ['comparing nfo file list with video file list'] )
-        lw.log( ['nfo files:', nfo_files, 'video files:', video_files] )
-        for nfo_file in nfo_files:
-            if (not nfo_file in video_files) and (not nfo_file == 'tvshow'):
-                delete_path = os.path.join( self.FOLDERPATH, nfo_file )
-                for one_ext in settings.delete_exts:
-                    success, loglines = deleteFile( delete_path + one_ext )
-                    lw.log( loglines )
+            if item in settings.protected_files:
+                pass
+            elif ext in settings.video_exts :
+                video_files.append( item )
+            else:
+                other_files.append( item )
+        lw.log( ['checking files to see if they need to be deleted'] )
+        lw.log( ['other files:', other_files, 'video files:', video_files] )
+        for one_file in other_files:
+            match = False
+            other_fileroot, throwaway = os.path.splitext( one_file )
+            for one_video in video_files:
+                video_root, throwaway = os.path.splitext( one_video )
+                if (other_fileroot == video_root) or (other_fileroot == video_root + settings.thumb_end):
+                    match = True
+            if not match:
+                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
+                lw.log( loglines )
         ep_info = {}
         try:
             ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
