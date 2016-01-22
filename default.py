@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.3.7
+# *  v.0.3.8
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -8,7 +8,7 @@ import argparse, datetime, os, random, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
-from resources.common.fileops import readFile, writeFile, deleteFile, checkPath
+from resources.common.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
 from resources.common.transforms import replaceWords
 if sys.version_info >= (2, 7):
     import json as _json
@@ -134,13 +134,10 @@ class Main:
                         exists, loglines = checkPath( newfilepath, create=False )
                         lw.log( loglines )
                         if not exists:
-                            try:
-                                os.rename( processfilepath, newfilepath )
-                            except OSError:
-                                lw.log( ['%s not found, aborting fix' % processfilepath] )
-                                break
-                            lw.log( ['renamed %s to %s' % (processfilepath, newfilepath)] )
-                            self._update_db( newfilepath )
+                            success, loglines = renameFile( processfilepath, newfilepath )
+                            lw.log( loglines )
+                            if success:
+                                self._update_db( newfilepath )
                         else:
                             lw.log( ['%s already has the correct file name' % processfilepath] )
                         break
@@ -163,7 +160,8 @@ class Main:
                         old_thumb = os.path.join( self.FOLDERPATH, item )
                         item = fileroot[:-len( rename_end )] + settings.thumb_end + ext
                         new_thumb = os.path.join( self.FOLDERPATH, item )
-                        os.rename( old_thumb, new_thumb )
+                        success, loglines = renameFile( old_thumb, new_thumb )
+                        lw.log( loglines )                        
             if item in settings.protected_files:
                 pass
             elif ext in settings.video_exts :
@@ -242,14 +240,12 @@ class Main:
                 if not newfileroot in video_files:
                     ep_info['episode'] = str( epnum )
                     self._write_nfofile( nfotemplate, ep_info, newnfoname )
-                    try:
-                        os.rename( processfilepath, newfilepath )
-                    except OSError:
-                        lw.log( ['%s not found, aborting fix' % processfilepath] )
+                    success, loglines = renameFile( processfilepath, newfilepath )
+                    lw.log( loglines )
+                    if not success:
                         break
                     renamed = True
                     video_files.append( newfileroot )
-                    lw.log( ['renamed %s to %s' % (processfile, newfilename)] )
                     self._update_db( newfilepath )
                 epnum += 1
 

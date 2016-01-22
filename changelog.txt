@@ -1,3 +1,6 @@
+v.0.3.8
+- moved to abstracted function to rename file
+
 v.0.3.7
 - improved cleanup routine 
 
