@@ -28,4 +28,16 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
+# if you want to move your files to an external NAS, set the root location here
+# nas_mount is the local mount point definition like 'Z:/Media/Kodi'
+# smb_name is the SMB name in Kodi list like 'smb://htpc/Media/Kodi'
+# don't include the final directory for the TV Shows or Movies
+nas_mount = ''
+smb_name = ''
+
+# the system assumes you have split TV shows and movies into separate sections
+# you need to provide the directory names here
+# these should be the same in the local NPVR recording directory and the remote NAS location
+movie_dir = 'Movies'
+tv_dir = 'TVShows'
 

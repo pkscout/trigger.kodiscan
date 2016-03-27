@@ -1,10 +1,10 @@
 # *  Credits:
 # *
-# *  v.0.3.9
+# *  v.0.4.0
 # *  original Trigger Kodi Scan code by pkscout
 
 
-import argparse, datetime, os, random, sqlite3, sys, time, xmltodict
+import argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -36,6 +36,10 @@ try:
     settings.rename_ends
     settings.protected_files
     settings.db_loc
+    settings.nas_mount
+    settings.smb_name
+    settings.movie_dir
+    settings.tv_dir
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
     lw.log( [err_str, 'script stopped'] )
@@ -46,8 +50,11 @@ class Main:
     def __init__( self ):
         self._parse_argv()
         self._init_vars()
+        if not (self.FILEPATH == '' or settings.nas_mount == ''):
+            self._nas_copy()
         if not self.FILEPATH == '':
-            self._fixes()
+            if not self.TYPE == settings.movie_dir:
+                self._fixes()
             self._trigger_scan()
         
                 
@@ -70,9 +77,48 @@ class Main:
             lw.log( ['no data returned from NPVR database, exiting.'] )
             self.FILEPATH = ''
             return
+        self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
+        self.SMBPATH = ''
+        remainder, self.SHOW = os.path.split( self.FOLDERPATH )
+        throwaway, self.TYPE = os.path.split( remainder )
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
-        self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
+            
+
+    def _nas_copy( self ):
+        nas_fail = True
+        try:
+            lw.log( ['getting list of files from ' + self.FOLDERPATH] )
+            files = os.listdir( self.FOLDERPATH )
+        except OSError:
+            lw.log( ['directory %s not found' % self.FOLDERPATH] )
+            return
+        lw.log( ['found: ', files] )
+        for onefile in files:
+            nas_fail = False
+            if (os.path.splitext( onefile )[1] in settings.video_exts):
+                filename = onefile
+            org = os.path.join( self.FOLDERPATH, onefile )
+            dest = os.path.join( settings.nas_mount, self.TYPE, self.SHOW, onefile )
+            exists, loglines = checkPath( os.path.join( settings.nas_mount, self.TYPE, self.SHOW), create=True )
+            lw.log( loglines )
+            try:
+                shutil.move( org, dest )
+            except shutil.Error, e:
+                lw.log( ['shutil error copying %s to %s' % (org, dest), e] )
+                nas_fail = True
+                break
+            except Exception, e:
+                lw.log( ['unknown error copying %s to %s' % (org, dest), e] )
+                nas_fail = True
+                break
+        if nas_fail:
+            self.FILEPATH = ''
+        else:
+            self.FILEPATH = os.path.join( settings.nas_mount, self.TYPE, self.SHOW, filename )
+            self.SMBPATH = os.path.join( settings.smb_name, self.TYPE, self.SHOW )
+            self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
+            self._update_db( self.FILEPATH )
 
 
     def _fixes( self ):
@@ -261,7 +307,10 @@ class Main:
         jsondict['id'] = '1'
         jsondict['jsonrpc'] = '2.0'
         jsondict['method'] = "VideoLibrary.Scan"
-        jsondict['params'] = {"directory":self.FOLDERPATH}
+        if self.SMBPATH == '':
+            jsondict['params'] = {"directory":self.FOLDERPATH}
+        else:
+            jsondict['params'] = {"directory":self.SMBPATH + '/'}        
         jsondata = _json.dumps( jsondict )
         time.sleep( random.randint( 5, 30 ) )
         success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
