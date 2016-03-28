@@ -28,13 +28,21 @@ In the data directory, rename settings-example.py to settings.py.  Edit that fil
 
 
 Usage:
-The best thing to do is add the following line to you PostPRocessing.bat file in the NPVR Scripts directory:
+The best thing to do is add the following line to you PostProcessing.bat file in the NPVR Scripts directory:
 
 "C:\Python27\python.exe" "C:\CustomApps\trigger.xbmcscan\default.py" %3
 
 Please change the python call to match the location of your python install.  Note that even if you have python in the system path, calling the script with just "python" doesn't seem to work.
 
-You can call the script directly from the command prompt, you just have to pass the correct OID in manually.
+You can call the script directly from the command prompt, you just have to pass the correct OID from the NPVR database in manually.
+
+
+Copying files to a NAS:
+With the appropriate settings (see nas_mount in settings file), this script will copy your files from your local NPVR machine to a remote NAS and update the location in NPVR.  This is handy if you use the local machine for recording but want to store the recordings on something with more space.
+
+
+Using with Kodi SMB library paths:
+If you are using your local machine as a SMB share for other Kodi clients (or copying the files to a NAS with SMB shares), you need to set the SMB path for the library so that the script can properly trigger a library scan (see smb_name in settings file).
 
 
 Fixing File Names:

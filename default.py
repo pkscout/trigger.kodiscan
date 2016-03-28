@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.4.0
+# *  v.0.4.1
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -78,9 +78,12 @@ class Main:
             self.FILEPATH = ''
             return
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
-        self.SMBPATH = ''
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )
         throwaway, self.TYPE = os.path.split( remainder )
+        if setting.smb_name = '':
+            self.SMBPATH = ''
+        else:
+            self.SMBPATH = os.path.join( settings.smb_name, self.TYPE, self.SHOW )
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
             
@@ -116,7 +119,6 @@ class Main:
             self.FILEPATH = ''
         else:
             self.FILEPATH = os.path.join( settings.nas_mount, self.TYPE, self.SHOW, filename )
-            self.SMBPATH = os.path.join( settings.smb_name, self.TYPE, self.SHOW )
             self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
             self._update_db( self.FILEPATH )
 

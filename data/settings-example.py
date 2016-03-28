@@ -30,9 +30,11 @@ db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
 # if you want to move your files to an external NAS, set the root location here
 # nas_mount is the local mount point definition like 'Z:/Media/Kodi'
-# smb_name is the SMB name in Kodi list like 'smb://htpc/Media/Kodi'
-# don't include the final directory for the TV Shows or Movies
 nas_mount = ''
+
+# if you're using SMB for you Kodi sources, you need to list it here to trigger the library scan
+# smb_name is the SMB name in Kodi like 'smb://htpc/Media/Kodi'
+# don't include the final directory for the TV Shows or Movies
 smb_name = ''
 
 # the system assumes you have split TV shows and movies into separate sections
