@@ -235,7 +235,7 @@ class Main:
             has_season_ep = True
         except KeyError:
             ep_info['season'] = '0'
-            ep_info['episode'] = ''
+            ep_info['episode'] = self._special_epnum( video_files )
             has_season_ep = False
         try:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
@@ -250,20 +250,6 @@ class Main:
         if has_season_ep:
             self._regularseason( show, nfotemplate, ep_info )
         else:
-            # this gets the next available special season episode number for use
-            highest_special_ep = ''
-            for videofile in video_files:
-                if videofile.startswith( '%s.S00' % show ):
-                    highest_special_ep = videofile
-            if highest_special_ep:
-                epsplit = highest_special_ep.split( '.' )
-                for onepart in epsplit:
-                    if onepart.startswith( 'S00' ):
-                        epnum = int( onepart[4:] ) + 1
-            else:
-                epnum = 1
-            ep_info['episode'] = str( epnum )
-            lw.log( ['the episode number calculated for the special season is ' + str( epnum )] )
             self._specialseason( show, nfotemplate, ep_info )
 
 
@@ -283,6 +269,23 @@ class Main:
             lw.log( args.theargs )
             lw.log( ['will try and continue with the first argument'] )
         self.OID = args.theargs[0]
+
+
+    def _special_epnumber( self, video_files ):
+        # this gets the next available special season episode number for use
+        highest_special_ep = ''
+        for videofile in video_files:
+            if videofile.startswith( '%s.S00' % show ):
+                highest_special_ep = videofile
+        if highest_special_ep:
+            epsplit = highest_special_ep.split( '.' )
+            for onepart in epsplit:
+                if onepart.startswith( 'S00' ):
+                    epnum = str( int( onepart[4:] ) + 1 )
+        else:
+            epnum = '1'
+        lw.log( ['the episode number calculated for the special season is ' + epnum] )
+        return epnum
 
 
     def _specialseason( self, show, nfotemplate, ep_info ):
