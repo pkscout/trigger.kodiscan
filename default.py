@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.4.1
+# *  v.0.4.2
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -80,7 +80,7 @@ class Main:
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )
         throwaway, self.TYPE = os.path.split( remainder )
-        if setting.smb_name = '':
+        if settings.smb_name == '':
             self.SMBPATH = ''
         else:
             self.SMBPATH = os.path.join( settings.smb_name, self.TYPE, self.SHOW )
@@ -247,10 +247,24 @@ class Main:
             ep_info['description'] = ''
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
-        if has_season_ep:
+        if not has_season_ep:
             self._regularseason( show, nfotemplate, ep_info )
         else:
-            self._specialseason( video_files, other_files, show, nfotemplate, ep_info )
+            # this gets the next available special season episode number for use
+            highest_special_ep = ''
+            for videofile in video_files:
+                if videofile.startswith( '%s.S00' % show ):
+                    highest_special_ep = videofile
+            if highest_special_ep:
+                epsplit = highest_special_ep.split( '.' )
+                for onepart in epsplit:
+                    if onepart.startswith( 'S00' ):
+                        epnum = int( onepart[4:] ) + 1
+            else:
+                epnum = 1
+            ep_info['episode'] = str( epnum )
+            lw.log( ['the episode number calculated for the special season is ' + str( epnum )] )
+            self._specialseason( show, nfotemplate, ep_info )
 
 
     def _regularseason( self, show, nfotemplate, ep_info ):
@@ -271,37 +285,19 @@ class Main:
         self.OID = args.theargs[0]
 
 
-    def _specialseason( self, video_files, other_files, show, nfotemplate, ep_info ):
-        processfiles = []
-        for video_file in video_files:
-            video_name, throwaway = os.path.splitext( video_file )
-            if len (other_files) == 0:
-                processfiles.append( video_file )
-            for one_file in other_files:
-                file_name, ext = os.path.splitext( one_file )
-                if (not file_name == video_name) and (ext == '.nfo'):
-                    processfiles.append( video_file )
-                    break
-        epnum = len( video_files )
-        for processfile in processfiles:
-            renamed = False
-            processfilepath = os.path.join (self.FOLDERPATH, processfile )
-            while not renamed:
-                newfileroot = '%s.S00E%s.%s' % (show, str( epnum ).zfill( 2 ), ep_info["airdate"])
-                newfilename = newfileroot + '.' + processfile.split( '.')[-1]
-                newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                newnfoname = newfileroot + '.nfo'
-                if not newfileroot in video_files:
-                    ep_info['episode'] = str( epnum )
-                    self._write_nfofile( nfotemplate, ep_info, newnfoname )
-                    success, loglines = renameFile( processfilepath, newfilepath )
-                    lw.log( loglines )
-                    if not success:
-                        break
-                    renamed = True
-                    video_files.append( newfileroot )
-                    self._update_db( newfilepath )
-                epnum += 1
+    def _specialseason( self, show, nfotemplate, ep_info ):
+        if ep_info['title']:
+            ep_title = ep_info['title']
+        else:
+            ep_title = ep_info['airdate']
+        newfileroot = '%s.S00E%s.%s' % (show, ep_info['episode'].zfill( 2 ), ep_title)
+        newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
+        newfilepath = os.path.join( self.FOLDERPATH, newfilename )
+        newnfoname = newfileroot + '.nfo'
+        self._write_nfofile( nfotemplate, ep_info, newnfoname )
+        success, loglines = renameFile( self.FILEPATH, newfilepath )
+        lw.log( loglines )
+        self._update_db( newfilepath )
 
 
     def _trigger_scan( self ):
