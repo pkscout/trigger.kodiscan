@@ -247,7 +247,7 @@ class Main:
             ep_info['description'] = ''
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
-        if not has_season_ep:
+        if has_season_ep:
             self._regularseason( show, nfotemplate, ep_info )
         else:
             # this gets the next available special season episode number for use
