@@ -1,3 +1,6 @@
+v.0.4.3
+- changed how episodes titles are handled (now uses NPVR title or 'Episode x' if empty
+
 v.0.4.2
 - fix for how special episodes are handled
 

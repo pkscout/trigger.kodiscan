@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.4.2
+# *  v.0.4.3
 # *  original Trigger Kodi Scan code by pkscout
 
 
@@ -232,30 +232,23 @@ class Main:
         try:
             ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
             ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
-            has_season_ep = True
         except KeyError:
             ep_info['season'] = '0'
             ep_info['episode'] = self._special_epnum( video_files )
-            has_season_ep = False
         try:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
-            ep_info['title'] = ''
+            ep_info['title'] = 'Episode ' + ep_info['episode']
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:
             ep_info['description'] = ''
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
-        if has_season_ep:
-            self._regularseason( show, nfotemplate, ep_info )
-        else:
+        if ep_info['season'] == '0':
             self._specialseason( show, nfotemplate, ep_info )
-
-
-    def _regularseason( self, show, nfotemplate, ep_info ):
-        newnfoname = os.path.splitext( self.FILEPATH )[0] + '.nfo'
-        self._write_nfofile( nfotemplate, ep_info, newnfoname )
+        else:
+            self._write_nfofile( nfotemplate, ep_info, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
 
 
     def _parse_argv( self ):
@@ -289,11 +282,7 @@ class Main:
 
 
     def _specialseason( self, show, nfotemplate, ep_info ):
-        if ep_info['title']:
-            ep_title = ep_info['title']
-        else:
-            ep_title = ep_info['airdate']
-        newfileroot = '%s.S00E%s.%s' % (show, ep_info['episode'].zfill( 2 ), ep_title)
+        newfileroot = '%s.S00E%s.%s' % (show, ep_info['episode'].zfill( 2 ), ep_info['title'])
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
         newnfoname = newfileroot + '.nfo'
