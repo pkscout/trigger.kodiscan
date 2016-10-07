@@ -234,14 +234,18 @@ class Main:
             ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
         except KeyError:
             ep_info['season'] = '0'
-            ep_info['episode'] = self._special_epnum( video_files )
+            ep_info['episode'] = self._special_epnumber( show, video_files )
         try:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
             ep_info['title'] = 'Episode ' + ep_info['episode']
+        if ep_info['title'] == None:
+            ep_info['title'] = 'Episode ' + ep_info['episode']            
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:
+            ep_info['description'] = ''
+        if ep_info['description'] == None:
             ep_info['description'] = ''
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
@@ -264,7 +268,7 @@ class Main:
         self.OID = args.theargs[0]
 
 
-    def _special_epnumber( self, video_files ):
+    def _special_epnumber( self, show, video_files ):
         # this gets the next available special season episode number for use
         highest_special_ep = ''
         for videofile in video_files:
