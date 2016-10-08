@@ -229,6 +229,7 @@ class Main:
                 success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
                 lw.log( loglines )
         ep_info = {}
+        ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         try:
             ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
             ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
@@ -238,16 +239,15 @@ class Main:
         try:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
-            ep_info['title'] = 'Episode ' + ep_info['episode']
+            ep_info['title'] = ep_info['airdate']
         if ep_info['title'] == None:
-            ep_info['title'] = 'Episode ' + ep_info['episode']            
+            ep_info['title'] = ep_info['airdate']            
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:
             ep_info['description'] = ''
         if ep_info['description'] == None:
             ep_info['description'] = ''
-        ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         lw.log( [ep_info] )       
         if ep_info['season'] == '0':
             self._specialseason( show, nfotemplate, ep_info )
