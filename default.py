@@ -1,10 +1,9 @@
 # *  Credits:
 # *
-# *  v.0.4.3
+# *  v.0.4.4
 # *  original Trigger Kodi Scan code by pkscout
 
-
-import argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
+import argparse, cv2, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -36,6 +35,8 @@ try:
     settings.rename_ends
     settings.protected_files
     settings.db_loc
+    settings.gen_thumbs
+    settings.force_thumbs
     settings.nas_mount
     settings.smb_name
     settings.movie_dir
@@ -253,6 +254,38 @@ class Main:
             self._specialseason( show, nfotemplate, ep_info )
         else:
             self._write_nfofile( nfotemplate, ep_info, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
+            self._generate_thumbnail( show, os.path.join( self.FOLDERPATH, self.FILEPATH ), os.path.join( self.FOLDERPATH, os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
+
+
+    def _generate_thumbnail( self, show, videopath, thumbpath ):
+        if not settings.gen_thumbs:
+            lw.log( ['thumbnail generation disabled in settings'] )
+            return
+        exists, loglines = checkPath( thumbpath, create=False )
+        lw.log( loglines )
+        if exists:
+            if not show in settings.force_thumbs:
+                lw.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'] )
+                return
+            else:
+                lw.log( ['thumbnail exists but show is in force_thumbs, creating thumbnail'] )
+        else:
+            lw.log( ['thumb does not exist, creating thumbnail'] )
+        random.seed()
+        vidcap = cv2.VideoCapture( videopath )
+        num_frames = int( vidcap.get( cv2.CAP_PROP_FRAME_COUNT ) )
+        lw.log( ['got %s frames back' % str( num_frames )] )
+        if num_frames:
+            frame_cap = random.randint( 1800, num_frames - 1800 )
+        else:
+            frame_cap = random.randint( 1800, 50000 )
+        vidcap.set( cv2.CAP_PROP_POS_FRAMES,frame_cap )
+        success,image = vidcap.read()
+        if success:
+            cv2.imwrite( thumbpath, image )
+            lw.log( ['successfully created thumbnail from frame %s at %s' % ( str( frame_cap ), thumbpath )] )
+        else:
+            lw.log( ['unable to create thumnail from frame %: frame out of range' %  str( framecap )] )
 
 
     def _parse_argv( self ):
@@ -292,6 +325,7 @@ class Main:
         newnfoname = newfileroot + '.nfo'
         self._write_nfofile( nfotemplate, ep_info, newnfoname )
         success, loglines = renameFile( self.FILEPATH, newfilepath )
+        self._generate_thumbnail( show, newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
         lw.log( loglines )
         self._update_db( newfilepath )
 

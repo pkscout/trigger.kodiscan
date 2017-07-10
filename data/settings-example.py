@@ -28,6 +28,12 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
+# if you want the script to generate missing thumbnails, set this to True
+gen_thumbs = False
+
+# shows that should generate thumbs even if they exist already
+force_thumbs = {'Whose Line Is It Anyway'}
+
 # if you want to move your files to an external NAS, set the root location here
 # nas_mount is the local mount point definition like 'Z:/Media/Kodi'
 nas_mount = ''

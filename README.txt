@@ -8,10 +8,11 @@ Prerequisites:
 1. You need to have python 2.7.x installed on your system (3.4.x might work, but I haven't tested it).
 <https://www.python.org/downloads/>
 
-2. You need to add the requests and xmltodict modules to your install.
+2. You need to add the opencv, requests, and xmltodict modules to your install.
 On 2.7.x you need to install pip first (3.4.x has pip included):
 <http://stackoverflow.com/questions/4750806/how-to-install-pip-on-windows>
-Then from the cmd window:   pip install requests
+Then from the cmd window:   pip install opencv-python
+							pip install requests
                             pip install xmltodict
 
 
@@ -43,6 +44,10 @@ With the appropriate settings (see nas_mount in settings file), this script will
 
 Using with Kodi SMB library paths:
 If you are using your local machine as a SMB share for other Kodi clients (or copying the files to a NAS with SMB shares), you need to set the SMB path for the library so that the script can properly trigger a library scan (see smb_name in settings file).
+
+
+Generating thumbnails:
+With the appropriate settings, this script will generate thumbnails from a random frame in the video if NPVR didn't download one. This is mostly helpful in showing the images on the Estuary home screen immediately instead of having to go to the file, have Kodi generate an internal thumbnail, and then refresh the skin to load it.
 
 
 Fixing File Names:

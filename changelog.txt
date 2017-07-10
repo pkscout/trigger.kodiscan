@@ -1,3 +1,6 @@
+v.0.4.4
+- added option to generate thumbnail from capture of random frame
+
 v.0.4.3
 - changed how episodes titles are handled (now uses NPVR title or 'Episode x' if empty
 
