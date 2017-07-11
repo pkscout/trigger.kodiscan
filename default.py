@@ -290,9 +290,9 @@ class Main:
         success,image = vidcap.read()
         if success:
             cv2.imwrite( thumbpath, image )
-            lw.log( ['successfully created thumbnail at %s' % ( str( frame_cap ), thumbpath )] )
+            lw.log( ['successfully created thumbnail at %s' % thumbpath] )
         else:
-            lw.log( ['unable to create thumnail: frame out of range' %  str( framecap )] )
+            lw.log( ['unable to create thumnail: frame out of range'] )
 
 
     def _parse_argv( self ):
