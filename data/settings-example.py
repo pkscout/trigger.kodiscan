@@ -31,8 +31,19 @@ db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 # if you want the script to generate missing thumbnails, set this to True
 gen_thumbs = False
 
+# indicate how much you pad your recordings at the beginning and end (in minutes)
+begin_pad_time = 0
+end_pad_time = 0
+
+# frames per minute assumption
+fpm = 1800
+
+# if you want the script to use a narrow time window for frame capture instead of the entire video
+# the narrow window is about 5 minutes near the beginning that, in the US, is almost always the actual show
+narrow_time = False
+
 # shows that should generate thumbs even if they exist already
-force_thumbs = {'Whose Line Is It Anyway'}
+force_thumbs = {''}
 
 # if you want to move your files to an external NAS, set the root location here
 # nas_mount is the local mount point definition like 'Z:/Media/Kodi'

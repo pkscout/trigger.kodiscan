@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.4.4
+# *  v.0.4.5
 # *  original Trigger Kodi Scan code by pkscout
 
 import argparse, cv2, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -36,6 +36,10 @@ try:
     settings.protected_files
     settings.db_loc
     settings.gen_thumbs
+    settings.begin_pad_time
+    settings.end_pad_time
+    settings.fpm
+    settings.narrow_time
     settings.force_thumbs
     settings.nas_mount
     settings.smb_name
@@ -274,18 +278,21 @@ class Main:
         random.seed()
         vidcap = cv2.VideoCapture( videopath )
         num_frames = int( vidcap.get( cv2.CAP_PROP_FRAME_COUNT ) )
-        lw.log( ['got %s frames back' % str( num_frames )] )
-        if num_frames:
-            frame_cap = random.randint( 1800, num_frames - 1800 )
+        if settings.narrow_time or not num_frames:
+            frame_start = 4*settings.fpm + settings.begin_pad_time*settings.fpm
+            frame_end = 9*settings.fpm + settings.begin_pad_time*settings.fpm
         else:
-            frame_cap = random.randint( 1800, 50000 )
+            frame_start = settings.begin_pad_time*settings.fpm
+            frame_end = num_frames - settings.end_pad_time*settings.fpm
+        frame_cap = random.randint( frame_start, frame_end )
+        lw.log( ['capturing frame %s from range %s - %s' % (str( frame_cap ), str( frame_start ), str( frame_end ))] )
         vidcap.set( cv2.CAP_PROP_POS_FRAMES,frame_cap )
         success,image = vidcap.read()
         if success:
             cv2.imwrite( thumbpath, image )
-            lw.log( ['successfully created thumbnail from frame %s at %s' % ( str( frame_cap ), thumbpath )] )
+            lw.log( ['successfully created thumbnail at %s' % ( str( frame_cap ), thumbpath )] )
         else:
-            lw.log( ['unable to create thumnail from frame %: frame out of range' %  str( framecap )] )
+            lw.log( ['unable to create thumnail: frame out of range' %  str( framecap )] )
 
 
     def _parse_argv( self ):

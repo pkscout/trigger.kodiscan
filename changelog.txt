@@ -1,3 +1,6 @@
+v.0.4.5
+- added option to restrict frame capture to a narrow segment with high probability of having show content
+
 v.0.4.4
 - added option to generate thumbnail from capture of random frame
 
