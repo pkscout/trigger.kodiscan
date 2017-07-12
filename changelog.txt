@@ -1,3 +1,6 @@
+v.0.4.6
+- now uses pid file to detect multiple copies of script running
+
 v.0.4.5
 - added option to restrict frame capture to a narrow segment with high probability of having show content
 

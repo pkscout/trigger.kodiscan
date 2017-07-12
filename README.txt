@@ -1,7 +1,7 @@
 trigger.xbmcscan
 ================
 
-This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers an XBMC scan on the parent directory for the file.  The script also allows you to rename shows based on either the air date or the information in the NextPVR database.
+This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers a Kodi scan on the parent directory for the file.  The script also allows you to rename shows based on either the air date or the information in the NextPVR database.  The script uses pid locking to ensure only one instance is running at a time and will wait for another instance to finish before running (this helps if you have multiple shows ending at the same time).
 
 
 Prerequisites:
@@ -31,7 +31,7 @@ In the data directory, rename settings-example.py to settings.py.  Edit that fil
 Usage:
 The best thing to do is add the following line to you PostProcessing.bat file in the NPVR Scripts directory:
 
-"C:\Python27\python.exe" "C:\CustomApps\trigger.xbmcscan\default.py" %3
+"C:\Python27\python.exe" "C:\CustomApps\trigger.kodiscan\execute.py" %3
 
 Please change the python call to match the location of your python install.  Note that even if you have python in the system path, calling the script with just "python" doesn't seem to work.
 

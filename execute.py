@@ -1,9 +1,9 @@
 # *  Credits:
 # *
-# *  v.0.4.5
+# *  v.0.4.6
 # *  original Trigger Kodi Scan code by pkscout
 
-import argparse, cv2, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
+import atexit, argparse, cv2, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -14,9 +14,17 @@ if sys.version_info >= (2, 7):
 else:
     import simplejson as _json
 
+def deletePID():
+    success, loglines = deleteFile( pidfile )
+    lw.log (loglines )
+
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
 JSONURL = URL( 'json', headers={'content-type':'application/json'} )
+
+pid = str(os.getpid())
+pidfile = os.path.join( p_folderpath, 'data', 'scan.pid' )
+atexit.register(deletePID)
 
 try:
     import data.settings as settings
@@ -25,6 +33,7 @@ except ImportError:
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 try:
+    settings.aborttime
     settings.xbmcuser
     settings.xbmcpass
     settings.xbmcuri
@@ -50,9 +59,10 @@ except AttributeError:
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 
-
+    
 class Main:
     def __init__( self ):
+        self.setPID()
         self._parse_argv()
         self._init_vars()
         if not (self.FILEPATH == '' or settings.nas_mount == ''):
@@ -63,6 +73,20 @@ class Main:
             self._trigger_scan()
         
                 
+    def setPID( self ):
+        lw.log( ['setting PID file'] )
+        time.sleep( random.randint( 1, 10 ) )
+        basetime = time.time()
+        while os.path.isfile( pidfile ):
+            time.sleep( 1 )
+            if time.time() - basetime > settings.aborttime:
+                err_str = 'aborting attempt to do scan'
+                lw.log( [err_str] )
+                sys.exit( err_str )
+        success, loglines = writeFile( pid, pidfile )
+        lw.log( loglines )        
+
+
     def _init_vars( self ):
         self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.xbmcuser, settings.xbmcpass, settings.xbmcuri, settings.xbmcport)
         #get all the data about the recording from the NPVR database
@@ -347,7 +371,7 @@ class Main:
         else:
             jsondict['params'] = {"directory":self.SMBPATH + '/'}        
         jsondata = _json.dumps( jsondict )
-        time.sleep( random.randint( 5, 30 ) )
+        #time.sleep( random.randint( 5, 30 ) )
         success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
         lw.log( loglines )
 
@@ -383,6 +407,6 @@ class Main:
 
 
 if ( __name__ == "__main__" ):
-    lw.log( ['script started'], 'info' )
+    lw.log( ['scan started'], 'info' )
     Main()
-lw.log( ['script stopped'], 'info' )
+lw.log( ['scan finished'], 'info' )

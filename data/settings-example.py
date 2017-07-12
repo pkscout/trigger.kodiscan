@@ -1,3 +1,6 @@
+#if another instance of script is running, amount of time to wait before giving up
+aborttime = 30
+
 # xbmc username and password
 # set in SYSTEM -> SETTINGS -> SERVICES -> WEBSERVER
 xbmcuser = 'xbmc'
