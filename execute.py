@@ -24,7 +24,7 @@ JSONURL = URL( 'json', headers={'content-type':'application/json'} )
 
 pid = str(os.getpid())
 pidfile = os.path.join( p_folderpath, 'data', 'scan.pid' )
-atexit.register(deletePID)
+atexit.register( deletePID )
 
 try:
     import data.settings as settings
@@ -74,7 +74,7 @@ class Main:
         
                 
     def setPID( self ):
-        lw.log( ['setting PID file'] )
+        random.seed()
         time.sleep( random.randint( 1, 10 ) )
         basetime = time.time()
         while os.path.isfile( pidfile ):
@@ -83,6 +83,7 @@ class Main:
                 err_str = 'aborting attempt to do scan'
                 lw.log( [err_str] )
                 sys.exit( err_str )
+        lw.log( ['setting PID file'] )
         success, loglines = writeFile( pid, pidfile )
         lw.log( loglines )        
 
