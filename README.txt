@@ -18,7 +18,7 @@ Then from the cmd window:   pip install requests
 3. To use the faster scan complete check, you need to add the websocket-client module to your python install.  After install the script will use websockets to communicate with Kodi unless you turn it off.  See below for information on configuring Kodi to use websockets for communication.
 From the cmd window:        pip install websocket-client
 
-4. To use the automatic thumbnail generation, you need to add the opencv-python module to your python install.  After install the script will generate thumbs automatically unless you turn it off in the settings.
+4. To use the automatic thumbnail generation, you need to add the opencv-python module (3.0 or later) to your python install.  After install the script will generate thumbs automatically unless you turn it off in the settings.
 From the cmd window:        pip install opencv-python
 
 
