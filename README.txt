@@ -26,7 +26,7 @@ Configuration:
 ---Kodi settings:
 In SYSTEM->SETTINGS->SERVICES->REMOTE CONTROL:
   a. enable "Allow remote control from applications on this system"
-If you are not using websocket support, then instead In SYSTEM->SETTINGS->SERVICES->WEBSERVER
+If you are not using websocket support, then instead in SYSTEM->SETTINGS->SERVICES->WEBSERVER
   a. enable "Allow remote control via HTTP"
   b. set a user name and password (script default assumes kodi for both).
   c. if needed, change the port (i.e. if something else is running on 8080).

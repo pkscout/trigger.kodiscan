@@ -3,7 +3,7 @@
 gen_thumbs = True
 
 # if you want to use HTTP to send commands to Kodi instead of websockets, set to False
-# requires asyncio and websocket modules to be present (see readme for instructions)
+# requires websocket-client module to be present (see readme for instructions)
 use_websockets = True
 
 # set to False if you want the script to select a frame from the entire file instead of
