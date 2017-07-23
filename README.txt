@@ -1,5 +1,6 @@
 trigger.xbmcscan
 ================
+PLEASE NOTE THAT AS OF 0.5.0 THERE ARE SUBSTATIVE CHANGES. IF YOU ARE UPGRADING FROM 0.4.x OR EARLIER, IT WOULD BE A GOOD IDEA TO USE THE SETTINGS-EXAMPLE.PY FILE AGAIN FROM SCRATH AND READ THROUGH THIS README AGAIN.
 
 This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers a Kodi scan on the parent directory for the file.  The script also allows you to rename shows based on either the air date or the information in the NextPVR database.  The script uses pid locking to ensure only one instance is running at a time and will wait for another instance to finish before running (this helps if you have multiple shows ending at the same time).
 
@@ -8,24 +9,29 @@ Prerequisites:
 1. You need to have python 2.7.x installed on your system (3.4.x might work, but I haven't tested it).
 <https://www.python.org/downloads/>
 
-2. You need to add the opencv, requests, and xmltodict modules to your install.
+2. You need to add the requests and xmltodict modules to your python install.
 On 2.7.x you need to install pip first (3.4.x has pip included):
 <http://stackoverflow.com/questions/4750806/how-to-install-pip-on-windows>
-Then from the cmd window:   pip install opencv-python
-							pip install requests
+Then from the cmd window:   pip install requests
                             pip install xmltodict
+                            
+3. To use the faster scan complete check, you need to add the websocket-client module to your python install.  After install the script will use websockets to communicate with Kodi unless you turn it off.  See below for information on configuring Kodi to use websockets for communication.
+From the cmd window:        pip install websocket-client
+
+4. To use the automatic thumbnail generation, you need to add the opencv-python module to your python install.  After install the script will generate thumbs automatically unless you turn it off in the settings.
+From the cmd window:        pip install opencv-python
 
 
 Configuration:
----XBMC settings:
-In SYSTEM->SETTINGS->SERVICES->WEBSERVER
-  a. enable "Allow control of XBMC via HTTP"
-  b. set a user name and password
-  c. if needed (i.e. if something else is running on 8080), change the port.
+---Kodi settings:
 In SYSTEM->SETTINGS->SERVICES->REMOTE CONTROL:
-  a. enable "Allow programs on this system to control XBMC.
+  a. enable "Allow remote control from applications on this system"
+If you are not using websocket support, then instead In SYSTEM->SETTINGS->SERVICES->WEBSERVER
+  a. enable "Allow remote control via HTTP"
+  b. set a user name and password (script default assumes kodi for both).
+  c. if needed, change the port (i.e. if something else is running on 8080).
 ---Script settings:
-In the data directory, rename settings-example.py to settings.py.  Edit that file and put in the user name and password you set above.  If you changed the port, make sure the settings.py file has that port number.  If your NextPVR database is in a non-standard location, make that change as needed.  For most people, all the other settings should be fine as is, but you can make changes as needed.
+In the data directory of the script, rename settings-example.py to settings.py.  Review the settings file and make changes as needed.  If you're not sure what a setting does even after reading the comments in the settings.py file, you can probably leave it at the default.
 
 
 Usage:
@@ -81,5 +87,3 @@ The show folder needs a file called episode.json.  That file contains some data 
 }
 
 There are two things to remember with the data in this file.  "ep1", "ep2", etc need to be unique for each record.  If you continue the naming format (i.e. "ep3", "ep4", etc.) you will be fine.  The record-date must be in the format yyyy-mm-dd and refers to the date on which you will be recording the episode.  This may or may not be the date the show aired according to thetvdb.com.  For instance, In the Flesh airs a week later on BBC America, and thetvdb.com data has the airdate set based on the BBC showing.  For the renaming to work if you recorded off BBC America, the json file for In the Flesh needs the dates the show is actually recorded instead of the BBC dates.
-
-

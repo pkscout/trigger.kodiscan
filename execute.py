@@ -1,9 +1,9 @@
 # *  Credits:
 # *
-# *  v.0.4.6
+# *  v.0.5.0
 # *  original Trigger Kodi Scan code by pkscout
 
-import atexit, argparse, cv2, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
+import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -14,17 +14,8 @@ if sys.version_info >= (2, 7):
 else:
     import simplejson as _json
 
-def deletePID():
-    success, loglines = deleteFile( pidfile )
-    lw.log (loglines )
-
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
-JSONURL = URL( 'json', headers={'content-type':'application/json'} )
-
-pid = str(os.getpid())
-pidfile = os.path.join( p_folderpath, 'data', 'scan.pid' )
-atexit.register( deletePID )
 
 try:
     import data.settings as settings
@@ -33,36 +24,61 @@ except ImportError:
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 try:
+    settings.gen_thumbs
+    settings.use_websockets
+    settings.narrow_time
+    settings.movie_dir
+    settings.tv_dir
+    settings.begin_pad_time
+    settings.end_pad_time
+    settings.force_thumbs
+    settings.nas_mount
+    settings.smb_name
     settings.aborttime
-    settings.xbmcuser
-    settings.xbmcpass
-    settings.xbmcuri
-    settings.xbmcport
+    settings.kodiport
+    settings.kodiuser
+    settings.kodipass
+    settings.kodiuri
+    settings.kodiwsport
     settings.video_exts
     settings.thumb_exts
     settings.thumb_end
     settings.rename_ends
     settings.protected_files
     settings.db_loc
-    settings.gen_thumbs
-    settings.begin_pad_time
-    settings.end_pad_time
     settings.fpm
-    settings.narrow_time
-    settings.force_thumbs
-    settings.nas_mount
-    settings.smb_name
-    settings.movie_dir
-    settings.tv_dir
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
     lw.log( [err_str, 'script stopped'] )
     sys.exit( err_str )
 
-    
+if settings.use_websockets:
+    try:
+        import websocket
+    except ImportError:
+        lw.log( ['websocket-client not installed, falling back to JSON over HTTP'] )
+        settings.use_websockets = False
+if not settings.use_websockets:
+    JSONURL = URL( 'json', headers={'content-type':'application/json'} )
+if settings.gen_thumbs:
+    try:
+        import cv2
+    except ImportError:
+        lw.log( ['cv2 not installed, disabling thumb generation'] )
+        settings.gen_thumbs = False
+
+def _deletePID():
+    success, loglines = deleteFile( pidfile )
+    lw.log (loglines )
+
+pid = str(os.getpid())
+pidfile = os.path.join( p_folderpath, 'data', 'scan.pid' )
+atexit.register( _deletePID )
+
+
 class Main:
     def __init__( self ):
-        self.setPID()
+        self._setPID()
         self._parse_argv()
         self._init_vars()
         if not (self.FILEPATH == '' or settings.nas_mount == ''):
@@ -73,14 +89,14 @@ class Main:
             self._trigger_scan()
         
                 
-    def setPID( self ):
+    def _setPID( self ):
         random.seed()
         time.sleep( random.randint( 1, 10 ) )
         basetime = time.time()
         while os.path.isfile( pidfile ):
-            time.sleep( 1 )
+            time.sleep( random.randint( 1, 3 ) )
             if time.time() - basetime > settings.aborttime:
-                err_str = 'aborting attempt to do scan'
+                err_str = 'taking too long for previous process to close - aborting attempt to do scan'
                 lw.log( [err_str] )
                 sys.exit( err_str )
         lw.log( ['setting PID file'] )
@@ -88,8 +104,24 @@ class Main:
         lw.log( loglines )        
 
 
+    def _parse_argv( self ):
+        parser = argparse.ArgumentParser()
+        parser.add_argument( "theargs", help="the OID of the recording as passed by NPVR", nargs="+" )
+        args = parser.parse_args()
+        if len( args.theargs ) == 1:
+            lw.log( ['got %s from command line' % args.theargs[0] ] )
+        else:
+            lw.log( ['got something strange from the command line'] )
+            lw.log( args.theargs )
+            lw.log( ['will try and continue with the first argument'] )
+        self.OID = args.theargs[0]
+
+
     def _init_vars( self ):
-        self.XBMCURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.xbmcuser, settings.xbmcpass, settings.xbmcuri, settings.xbmcport)
+        if settings.use_websockets:
+            self.KODIURL = 'ws://%s:%s/jsponrpc' % (settings.kodiuri, settings.kodiwsport )
+        else:
+            self.KODIURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.kodiuser, settings.kodipass, settings.kodiuri, settings.kodiport)
         #get all the data about the recording from the NPVR database
         try:
             db = sqlite3.connect(settings.db_loc)
@@ -320,19 +352,6 @@ class Main:
             lw.log( ['unable to create thumnail: frame out of range'] )
 
 
-    def _parse_argv( self ):
-        parser = argparse.ArgumentParser()
-        parser.add_argument( "theargs", help="the OID of the recording as passed by NPVR", nargs="+" )
-        args = parser.parse_args()
-        if len( args.theargs ) == 1:
-            lw.log( ['got %s from command line' % args.theargs[0] ] )
-        else:
-            lw.log( ['got something strange from the command line'] )
-            lw.log( args.theargs )
-            lw.log( ['will try and continue with the first argument'] )
-        self.OID = args.theargs[0]
-
-
     def _special_epnumber( self, show, video_files ):
         # this gets the next available special season episode number for use
         highest_special_ep = ''
@@ -372,9 +391,35 @@ class Main:
         else:
             jsondict['params'] = {"directory":self.SMBPATH + '/'}        
         jsondata = _json.dumps( jsondict )
-        #time.sleep( random.randint( 5, 30 ) )
-        success, loglines, data = JSONURL.Post( self.XBMCURL, data=jsondata )
-        lw.log( loglines )
+        if settings.use_websockets:
+            self._trigger_via_websocket( jsondata )
+        else:
+            time.sleep( 20 ) #this is to allow time for a previous scan to finish before starting the next process
+            success, loglines, data = JSONURL.Post( self.KODIURL, data=jsondata )
+            lw.log( loglines )
+
+
+    def _trigger_via_websocket( self, jsondata ):
+        def on_message(ws, message):
+            lw.log( ['got back: ' + message] )
+            if "VideoLibrary.OnScanFinished" in message:
+                lw.log( ['got back scan complete message, attempting to close websocket'] )
+                ws.close()
+            ws_aborttime = settings.aborttime - 5
+            if time.time() - self.WSTIME > ws_aborttime:
+                raise WebSocketException( "process has taken longer than %s seconds - terminating" % str( ws_aborttime ) )
+        def on_error(ws, error):
+            lw.log( [error] )
+            ws.close()
+        def on_close(ws):
+            lw.log( ['websocket connection closed'] )
+        def on_open(ws):
+            lw.log( ['sending: ' + jsondata] )
+            ws.send( jsondata )
+        ws = websocket.WebSocketApp( self.KODIURL, on_message = on_message, on_error = on_error, on_open = on_open, on_close = on_close )
+        lw.log( ['websocket connection opening'] )
+        self.WSTIME = time.time()
+        ws.run_forever()        
 
 
     def _update_db( self, newfilepath ):
@@ -408,6 +453,6 @@ class Main:
 
 
 if ( __name__ == "__main__" ):
-    lw.log( ['scan started'], 'info' )
+    lw.log( ['script started'], 'info' )
     Main()
-lw.log( ['scan finished'], 'info' )
+lw.log( ['script finished'], 'info' )

@@ -1,16 +1,52 @@
+# if you want to turn off generation of missing thumbnails, set to False
+# requires cv2 module to be present (see readme for instructions)
+gen_thumbs = True
+
+# if you want to use HTTP to send commands to Kodi instead of websockets, set to False
+# requires asyncio and websocket modules to be present (see readme for instructions)
+use_websockets = True
+
+# set to False if you want the script to select a frame from the entire file instead of
+# a the narrow window of about 5 minutes near the beginning that, in the US, is almost
+# always the actual show
+narrow_time = True
+
+# the system assumes you have split TV shows and movies into separate sections
+# you need to provide the directory names here
+# these should be the same in the local NPVR recording directory and the remote NAS location
+movie_dir = 'Movies'
+tv_dir = 'TVShows'
+
+# indicate how much you pad your recordings at the beginning and end (in minutes)
+begin_pad_time = 0
+end_pad_time = 0
+
+# shows that should generate thumbs even if they exist already
+force_thumbs = {''}
+
+# if you want to move your files to an external NAS, set the root location here
+# nas_mount is the local mount point definition like 'Z:/Media/Kodi'
+nas_mount = ''
+
+# if you're using SMB for you Kodi sources, you need to list it here to trigger the library scan
+# smb_name is the SMB name in Kodi like 'smb://htpc/Media/Kodi'
+# don't include the final directory for the TV Shows or Movies
+smb_name = ''
+
 #if another instance of script is running, amount of time to wait before giving up
 aborttime = 30
 
-# xbmc username and password
-# set in SYSTEM -> SETTINGS -> SERVICES -> WEBSERVER
-xbmcuser = 'xbmc'
-xbmcpass = 'xbmc'
+# port, username, and password set in SYSTEM -> SETTINGS -> SERVICES -> WEBSERVER
+# none of these are used if your using the websocket connection
+kodiport = 8080
+kodiuser = 'kodi'
+kodipass = 'kodi'
 
-# the URL and port XBMC web services are using
-# these shouldn't need to change unless you change the port number in XBMC
-# set in SYSTEM -> SETTINGS -> SERVICES -> WEBSERVER
-xbmcuri = 'localhost'
-xbmcport = 8080
+# the URL Kodi remote command services are using
+kodiuri = 'localhost'
+
+# the port for websocket
+kodiwsport = 9090
 
 # the extensions the script uses for video files
 video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}
@@ -31,35 +67,6 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
-# if you want the script to generate missing thumbnails, set this to True
-gen_thumbs = False
-
-# indicate how much you pad your recordings at the beginning and end (in minutes)
-begin_pad_time = 0
-end_pad_time = 0
-
 # frames per minute assumption
 fpm = 1800
-
-# if you want the script to use a narrow time window for frame capture instead of the entire video
-# the narrow window is about 5 minutes near the beginning that, in the US, is almost always the actual show
-narrow_time = False
-
-# shows that should generate thumbs even if they exist already
-force_thumbs = {''}
-
-# if you want to move your files to an external NAS, set the root location here
-# nas_mount is the local mount point definition like 'Z:/Media/Kodi'
-nas_mount = ''
-
-# if you're using SMB for you Kodi sources, you need to list it here to trigger the library scan
-# smb_name is the SMB name in Kodi like 'smb://htpc/Media/Kodi'
-# don't include the final directory for the TV Shows or Movies
-smb_name = ''
-
-# the system assumes you have split TV shows and movies into separate sections
-# you need to provide the directory names here
-# these should be the same in the local NPVR recording directory and the remote NAS location
-movie_dir = 'Movies'
-tv_dir = 'TVShows'
 

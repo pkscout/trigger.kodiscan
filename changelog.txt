@@ -1,3 +1,10 @@
+v.0.5.0
+- changed default communication with Kodi to websockets to get notified of scan complete
+- changed thumbnail generation to on by default
+
+v.0.4.7
+- added a delay before initiating scan to give a previous scan a chance to finish
+
 v.0.4.6
 - now uses pid file to detect multiple copies of script running
 
