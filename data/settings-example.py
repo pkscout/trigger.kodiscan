@@ -67,6 +67,6 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
-# frames per minute assumption
-fpm = 1800
+# frames per second fallback (only used if opencv can't figure it out from the video
+fallback_fps = 30
 
