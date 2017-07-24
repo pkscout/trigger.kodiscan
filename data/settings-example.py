@@ -12,9 +12,8 @@ use_websockets = True
 narrow_time = True
 
 # the system assumes you have split TV shows and movies into separate sections
-# you need to provide the directory names here
-# these should be the same in the local NPVR recording directory and the remote NAS location
-movie_dir = 'Movies'
+# you need to provide the TV directory name here (script assumes anything else is movies)
+# should be the same in the local NPVR recording directory and the remote NAS location
 tv_dir = 'TVShows'
 
 # indicate how much you pad your recordings at the beginning and end (in minutes)

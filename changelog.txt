@@ -1,3 +1,6 @@
+v.0.5.3
+- added support for movies (must be in different directory than TV shows)
+
 v.0.5.2
 - eliminated fallback fps and added error checking for opencv to skip thumb generation if there are issues
 

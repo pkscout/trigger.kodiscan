@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.5.2
+# *  v.0.5.3
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -27,7 +27,6 @@ try:
     settings.gen_thumbs
     settings.use_websockets
     settings.narrow_time
-    settings.movie_dir
     settings.tv_dir
     settings.begin_pad_time
     settings.end_pad_time
@@ -83,7 +82,7 @@ class Main:
         if not (self.FILEPATH == '' or settings.nas_mount == ''):
             self._nas_copy()
         if not self.FILEPATH == '':
-            if not self.TYPE == settings.movie_dir:
+            if self.TYPE == settings.tv_dir:
                 self._fixes()
             self._trigger_scan()
         
@@ -202,7 +201,7 @@ class Main:
             lw.log( ['found default fix, applying to %s' % show] )
             show_fixdir = os.path.join( fixes_dir, 'default' )
             found_show = True
-        if found_show:            
+        if found_show:
             nfopath = os.path.join( show_fixdir, 'episode.nfo')
             jsonpath = os.path.join( show_fixdir, 'episode.json')
             exists, loglines = checkPath( jsonpath, create=False )
@@ -301,8 +300,8 @@ class Main:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
             ep_info['title'] = ep_info['airdate']
-        if ep_info['title'] == None:
-            ep_info['title'] = ep_info['airdate']            
+            if ep_info['title'] == None:
+                ep_info['title'] = ep_info['airdate']
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:
