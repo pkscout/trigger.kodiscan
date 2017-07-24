@@ -66,7 +66,3 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # the path to the NextPVR database (including the actual database file)
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
-
-# frames per second fallback (only used if opencv can't figure it out from the video
-fallback_fps = 30
-

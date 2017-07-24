@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.5.1
+# *  v.0.5.2
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -46,7 +46,6 @@ try:
     settings.rename_ends
     settings.protected_files
     settings.db_loc
-    settings.fallback_fps
 except AttributeError:
     err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
     lw.log( [err_str, 'script stopped'] )
@@ -332,24 +331,24 @@ class Main:
                 lw.log( ['thumbnail exists but show is in force_thumbs, creating thumbnail'] )
         else:
             lw.log( ['thumb does not exist, creating thumbnail'] )
-        random.seed()
         vidcap = cv2.VideoCapture( videopath )
         num_frames = int( vidcap.get( cv2.CAP_PROP_FRAME_COUNT ) )
         fps = int( vidcap.get( cv2.CAP_PROP_FPS ) )
         lw.log( ['got numframes: %s and fps: %s' % (str( num_frames ), str( fps ))] )
-        if not fps:
-            lw.log( ['using fallback_fps of ' + str( settings.fallback_fps )] )
-            fps = settings.fallback_fps
-        if settings.narrow_time or not num_frames:
+        if num_frames < 30 and fps < 30:
+            lw.log( ['probably an error when reading file with opencv, skipping thumbnail generation'] )
+            return
+        if settings.narrow_time:
             frame_start = 4*60*fps + settings.begin_pad_time*60*fps
             frame_end = 9*60*fps + settings.begin_pad_time*60*fps
         else:
             frame_start = settings.begin_pad_time*60*fps
             frame_end = num_frames - settings.end_pad_time*60*fps
+        random.seed()
         frame_cap = random.randint( frame_start, frame_end )
         lw.log( ['capturing frame %s from range %s - %s' % (str( frame_cap ), str( frame_start ), str( frame_end ))] )
         vidcap.set( cv2.CAP_PROP_POS_FRAMES,frame_cap )
-        success,image = vidcap.read()
+        success, image = vidcap.read()
         if success:
             cv2.imwrite( thumbpath, image )
             lw.log( ['successfully created thumbnail at %s' % thumbpath] )

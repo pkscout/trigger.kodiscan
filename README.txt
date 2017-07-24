@@ -2,7 +2,12 @@ trigger.xbmcscan
 ================
 PLEASE NOTE THAT AS OF 0.5.0 THERE ARE SUBSTATIVE CHANGES. IF YOU ARE UPGRADING FROM 0.4.x OR EARLIER, IT WOULD BE A GOOD IDEA TO USE THE SETTINGS-EXAMPLE.PY FILE AGAIN FROM SCRATH AND READ THROUGH THIS README AGAIN.
 
-This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers a Kodi scan on the parent directory for the file.  The script also allows you to rename shows based on either the air date or the information in the NextPVR database.  The script uses pid locking to ensure only one instance is running at a time and will wait for another instance to finish before running (this helps if you have multiple shows ending at the same time).
+This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers a Kodi scan on the parent directory for the file.  The script also allows you to:
+a. rename shows based on either the air date or the information in the NextPVR database
+b. provide special season naming for episodes with no season/episode information
+c. generate thumbnail image from the video
+
+The script uses pid locking to ensure only one instance is running at a time and will wait for another instance to finish before running (this helps if you have multiple shows ending at the same time).
 
 
 Prerequisites:
