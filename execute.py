@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.5.3
+# *  v.0.5.4
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -300,8 +300,8 @@ class Main:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
             ep_info['title'] = ep_info['airdate']
-            if ep_info['title'] == None:
-                ep_info['title'] = ep_info['airdate']
+        if ep_info['title'] == None:
+            ep_info['title'] = ep_info['airdate']
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:

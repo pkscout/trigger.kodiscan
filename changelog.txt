@@ -1,3 +1,6 @@
+v.0.5.4
+- fixed bug in file naming for TV episodes with no season/episode info
+
 v.0.5.3
 - added support for movies (must be in different directory than TV shows)
 
