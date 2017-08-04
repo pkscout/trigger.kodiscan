@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.5.4
+# *  v.0.5.5
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -27,6 +27,8 @@ try:
     settings.gen_thumbs
     settings.use_websockets
     settings.narrow_time
+    settings.narrow_start
+    settings.narrow_end
     settings.tv_dir
     settings.begin_pad_time
     settings.end_pad_time
@@ -338,8 +340,8 @@ class Main:
             lw.log( ['probably an error when reading file with opencv, skipping thumbnail generation'] )
             return
         if settings.narrow_time:
-            frame_start = 4*60*fps + settings.begin_pad_time*60*fps
-            frame_end = 9*60*fps + settings.begin_pad_time*60*fps
+            frame_start = settings.narrow_start*60*fps + settings.begin_pad_time*60*fps
+            frame_end = settings.narrow_end*60*fps + settings.begin_pad_time*60*fps
         else:
             frame_start = settings.begin_pad_time*60*fps
             frame_end = num_frames - settings.end_pad_time*60*fps

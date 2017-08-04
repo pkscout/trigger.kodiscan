@@ -1,3 +1,6 @@
+v.0.5.5
+- moved the bounds for the narrow time to the settings file
+
 v.0.5.4
 - fixed bug in file naming for TV episodes with no season/episode info
 

@@ -7,9 +7,10 @@ gen_thumbs = True
 use_websockets = True
 
 # set to False if you want the script to select a frame from the entire file instead of
-# a the narrow window of about 5 minutes near the beginning that, in the US, is almost
-# always the actual show
+# a narrow window defined by the other two settings below
 narrow_time = True
+narrow_start = 4
+narrow_end = 9
 
 # the system assumes you have split TV shows and movies into separate sections
 # you need to provide the TV directory name here (script assumes anything else is movies)
@@ -17,6 +18,7 @@ narrow_time = True
 tv_dir = 'TVShows'
 
 # indicate how much you pad your recordings at the beginning and end (in minutes)
+# end_pad_time is ignored if narrow_time is True
 begin_pad_time = 0
 end_pad_time = 0
 
