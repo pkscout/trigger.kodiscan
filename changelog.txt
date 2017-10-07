@@ -1,3 +1,6 @@
+v.1.0.0~beta1
+- changed how settings defaults are handled so settings.py is no longer required
+
 v.0.5.5
 - moved the bounds for the narrow time to the settings file
 

@@ -36,7 +36,7 @@ If you are not using websocket support, then instead in SYSTEM->SETTINGS->SERVIC
   b. set a user name and password (script default assumes kodi for both).
   c. if needed, change the port (i.e. if something else is running on 8080).
 ---Script settings:
-In the data directory of the script, rename settings-example.py to settings.py.  Review the settings file and make changes as needed.  If you're not sure what a setting does even after reading the comments in the settings.py file, you can probably leave it at the default.
+The script has a set of default settings described in settings-example.py.  Review that file.  If you want to make changes you can either create a new settings.py file and copy and paste in the things you want to override or copy settings-example.py to settings.py and make changes as needed.  If you're not sure what a setting does even after reading the comments in the settings-example.py file, you can probably leave it at the default.
 
 
 Usage:

@@ -4,6 +4,7 @@
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
+import data.config as config
 from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
@@ -15,57 +16,26 @@ else:
     import simplejson as _json
 
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
-lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ) )
+p_folderpath, p_filename = os.path.split( os.path.realpath( __file__ ) )
+lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ),
+             numbackups = config.Get( 'logbackups' ), logdebug = str( config.Get( 'debug' ) ) )
 
-try:
-    import data.settings as settings
-except ImportError:
-    err_str = 'no settings file found at %s' % os.path.join ( p_folderpath, 'data', 'settings.py' )
-    lw.log( [err_str, 'script stopped'] )
-    sys.exit( err_str )
-try:
-    settings.gen_thumbs
-    settings.use_websockets
-    settings.narrow_time
-    settings.narrow_start
-    settings.narrow_end
-    settings.tv_dir
-    settings.begin_pad_time
-    settings.end_pad_time
-    settings.force_thumbs
-    settings.nas_mount
-    settings.smb_name
-    settings.aborttime
-    settings.kodiport
-    settings.kodiuser
-    settings.kodipass
-    settings.kodiuri
-    settings.kodiwsport
-    settings.video_exts
-    settings.thumb_exts
-    settings.thumb_end
-    settings.rename_ends
-    settings.protected_files
-    settings.db_loc
-except AttributeError:
-    err_str = 'Settings file does not have all required fields. Please check settings-example.py for required settings.'
-    lw.log( [err_str, 'script stopped'] )
-    sys.exit( err_str )
-
-if settings.use_websockets:
+if config.Get( 'use_websockets' ):
     try:
         import websocket
+        use_websockets = True
     except ImportError:
         lw.log( ['websocket-client not installed, falling back to JSON over HTTP'] )
-        settings.use_websockets = False
-if not settings.use_websockets:
+        use_websockets = False
+if not use_websockets:
     JSONURL = URL( 'json', headers={'content-type':'application/json'} )
-if settings.gen_thumbs:
+if config.Get( 'gen_thumbs' ):
     try:
         import cv2
+        gen_thumbs = True
     except ImportError:
         lw.log( ['cv2 not installed, disabling thumb generation'] )
-        settings.gen_thumbs = False
+        gen_thumbs = False
 
 def _deletePID():
     success, loglines = deleteFile( pidfile )
@@ -81,10 +51,10 @@ class Main:
         self._setPID()
         self._parse_argv()
         self._init_vars()
-        if not (self.FILEPATH == '' or settings.nas_mount == ''):
+        if not (self.FILEPATH == '' or config.Get( 'nas_mount' ) == ''):
             self._nas_copy()
         if not self.FILEPATH == '':
-            if self.TYPE == settings.tv_dir:
+            if self.TYPE == config.Get( 'tv_dir' ):
                 self._fixes()
             self._trigger_scan()
         
@@ -95,7 +65,7 @@ class Main:
         basetime = time.time()
         while os.path.isfile( pidfile ):
             time.sleep( random.randint( 1, 3 ) )
-            if time.time() - basetime > settings.aborttime:
+            if time.time() - basetime > config.Get( 'aborttime' ):
                 err_str = 'taking too long for previous process to close - aborting attempt to do scan'
                 lw.log( [err_str] )
                 sys.exit( err_str )
@@ -118,13 +88,13 @@ class Main:
 
 
     def _init_vars( self ):
-        if settings.use_websockets:
-            self.KODIURL = 'ws://%s:%s/jsponrpc' % (settings.kodiuri, settings.kodiwsport )
+        if use_websockets:
+            self.KODIURL = 'ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )
         else:
-            self.KODIURL = 'http://%s:%s@%s:%s/jsonrpc' % (settings.kodiuser, settings.kodipass, settings.kodiuri, settings.kodiport)
+            self.KODIURL = 'http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ), config.Get( 'kodipass' ), config.Get( 'kodiuri' ), config.Get( 'kodiport' ))
         #get all the data about the recording from the NPVR database
         try:
-            db = sqlite3.connect(settings.db_loc)
+            db = sqlite3.connect( config.Get( 'db_loc' ) )
             cursor = db.cursor()
             cursor.execute( '''SELECT filename, event_details from SCHEDULED_RECORDING WHERE oid=?''', ( self.OID, ) )
             recording_info = cursor.fetchone()
@@ -142,10 +112,10 @@ class Main:
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )
         throwaway, self.TYPE = os.path.split( remainder )
-        if settings.smb_name == '':
+        if config.Get( 'smb_name' ) == '':
             self.SMBPATH = ''
         else:
-            self.SMBPATH = os.path.join( settings.smb_name, self.TYPE, self.SHOW )
+            self.SMBPATH = os.path.join( config.Get( 'smb_name' ), self.TYPE, self.SHOW )
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
             
@@ -161,11 +131,11 @@ class Main:
         lw.log( ['found: ', files] )
         for onefile in files:
             nas_fail = False
-            if (os.path.splitext( onefile )[1] in settings.video_exts):
+            if (os.path.splitext( onefile )[1] in config.Get( 'video_exts' )):
                 filename = onefile
             org = os.path.join( self.FOLDERPATH, onefile )
-            dest = os.path.join( settings.nas_mount, self.TYPE, self.SHOW, onefile )
-            exists, loglines = checkPath( os.path.join( settings.nas_mount, self.TYPE, self.SHOW), create=True )
+            dest = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, onefile )
+            exists, loglines = checkPath( os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW), create=True )
             lw.log( loglines )
             try:
                 shutil.move( org, dest )
@@ -180,7 +150,7 @@ class Main:
         if nas_fail:
             self.FILEPATH = ''
         else:
-            self.FILEPATH = os.path.join( settings.nas_mount, self.TYPE, self.SHOW, filename )
+            self.FILEPATH = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, filename )
             self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
             self._update_db( self.FILEPATH )
 
@@ -234,7 +204,7 @@ class Main:
             fileroot, ext = os.path.splitext( item )
             processfilepath = os.path.join( self.FOLDERPATH, item )
             last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
-            if ext in settings.video_exts :
+            if ext in config.Get( 'video_exts' ):
                 for key in episodes:
                     episode = episodes[key]
                     lw.log( ['comparing file last mod of %s with json record date of %s' % (last_mod, episode['record-date'])] )
@@ -264,17 +234,17 @@ class Main:
             sys.exit( err_str )
         for item in items:
             fileroot, ext = os.path.splitext( item )
-            if ext in settings.thumb_exts:
-                for rename_end in settings.rename_ends:
+            if ext in config.Get( 'thumb_exts' ):
+                for rename_end in config.Get( 'rename_ends' ):
                     if fileroot.endswith( rename_end ):
                         old_thumb = os.path.join( self.FOLDERPATH, item )
-                        item = fileroot[:-len( rename_end )] + settings.thumb_end + ext
+                        item = fileroot[:-len( rename_end )] + config.Get( 'thumb_end' ) + ext
                         new_thumb = os.path.join( self.FOLDERPATH, item )
                         success, loglines = renameFile( old_thumb, new_thumb )
                         lw.log( loglines )                        
-            if item in settings.protected_files:
+            if item in config.Get( 'protected_files' ):
                 pass
-            elif ext in settings.video_exts :
+            elif ext in config.Get( 'video_exts' ):
                 video_files.append( item )
             else:
                 other_files.append( item )
@@ -285,7 +255,7 @@ class Main:
             other_fileroot, throwaway = os.path.splitext( one_file )
             for one_video in video_files:
                 video_root, throwaway = os.path.splitext( one_video )
-                if (other_fileroot == video_root) or (other_fileroot == video_root + settings.thumb_end):
+                if (other_fileroot == video_root) or (other_fileroot == video_root + config.Get( 'thumb_end' )):
                     match = True
             if not match:
                 success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
@@ -319,13 +289,13 @@ class Main:
 
 
     def _generate_thumbnail( self, show, videopath, thumbpath ):
-        if not settings.gen_thumbs:
+        if not gen_thumbs:
             lw.log( ['thumbnail generation disabled in settings'] )
             return
         exists, loglines = checkPath( thumbpath, create=False )
         lw.log( loglines )
         if exists:
-            if not show in settings.force_thumbs:
+            if not show in config.Get( 'force_thumbs' ):
                 lw.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'] )
                 return
             else:
@@ -339,12 +309,12 @@ class Main:
         if num_frames < 30 and fps < 30:
             lw.log( ['probably an error when reading file with opencv, skipping thumbnail generation'] )
             return
-        if settings.narrow_time:
-            frame_start = settings.narrow_start*60*fps + settings.begin_pad_time*60*fps
-            frame_end = settings.narrow_end*60*fps + settings.begin_pad_time*60*fps
+        if config.Get( 'narrow_time' ):
+            frame_start = config.Get( 'narrow_start' )*60*fps + config.Get( 'begin_pad_time' )*60*fps
+            frame_end = config.Get( 'narrow_end' )*60*fps + config.Get( 'begin_pad_time' )*60*fps
         else:
-            frame_start = settings.begin_pad_time*60*fps
-            frame_end = num_frames - settings.end_pad_time*60*fps
+            frame_start = config.Get( 'begin_pad_time' )*60*fps
+            frame_end = num_frames - config.Get( 'end_pad_time' )*60*fps
         random.seed()
         frame_cap = random.randint( frame_start, frame_end )
         lw.log( ['capturing frame %s from range %s - %s' % (str( frame_cap ), str( frame_start ), str( frame_end ))] )
@@ -396,7 +366,7 @@ class Main:
         else:
             jsondict['params'] = {"directory":self.SMBPATH + '/'}        
         jsondata = _json.dumps( jsondict )
-        if settings.use_websockets:
+        if use_websockets:
             self._trigger_via_websocket( jsondata )
         else:
             time.sleep( 20 ) #this is to allow time for a previous scan to finish before starting the next process
@@ -410,7 +380,7 @@ class Main:
             if "VideoLibrary.OnScanFinished" in message:
                 lw.log( ['got back scan complete message, attempting to close websocket'] )
                 ws.close()
-            ws_aborttime = settings.aborttime - 5
+            ws_aborttime = config.Get( 'aborttime' ) - 5
             if time.time() - self.WSTIME > ws_aborttime:
                 raise WebSocketException( "process has taken longer than %s seconds - terminating" % str( ws_aborttime ) )
         def on_error(ws, error):
@@ -428,7 +398,7 @@ class Main:
 
 
     def _update_db( self, newfilepath ):
-        db = sqlite3.connect(settings.db_loc)
+        db = sqlite3.connect( config.Get( 'db_loc' ) )
         cursor = db.cursor()
         cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
         db.commit()

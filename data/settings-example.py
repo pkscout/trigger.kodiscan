@@ -67,3 +67,10 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 # the path to the NextPVR database (including the actual database file)
 # you shouldn't need to change this unless you have a non-standard NPVR install
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
+
+#number of script logs to keep
+logbackups = 0
+
+# for debugging you can get a more verbose log by setting this to True
+debug = False
+
