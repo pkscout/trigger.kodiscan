@@ -16,7 +16,6 @@ else:
     import simplejson as _json
 
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
-p_folderpath, p_filename = os.path.split( os.path.realpath( __file__ ) )
 lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ),
              numbackups = config.Get( 'logbackups' ), logdebug = str( config.Get( 'debug' ) ) )
 
