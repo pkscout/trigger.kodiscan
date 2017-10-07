@@ -23,7 +23,7 @@ defaults = { 'gen_thumbs': True,
                                   'banner.jpg', 'banner.png', 'fanart.jpg',
                                   'fanart.png', 'folder.jpg', 'folder.png' },
              'db_loc': 'C:\\Users\\Public\\NPVR\\npvr.db3',
-             'logbackups': 0,
+             'logbackups': 1,
              'debug': False }
 
 

@@ -69,7 +69,7 @@ protected_files = {'tvshow.nfo', 'poster.jpg', 'poster.png', 'banner.jpg', 'bann
 db_loc = 'C:\\Users\\Public\\NPVR\\npvr.db3'
 
 #number of script logs to keep
-logbackups = 0
+logbackups = 1
 
 # for debugging you can get a more verbose log by setting this to True
 debug = False
