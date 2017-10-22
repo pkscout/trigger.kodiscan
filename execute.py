@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.0.5.5
+# *  v.1.0.0~beta2
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -114,7 +114,7 @@ class Main:
         if config.Get( 'smb_name' ) == '':
             self.SMBPATH = ''
         else:
-            self.SMBPATH = os.path.join( config.Get( 'smb_name' ), self.TYPE, self.SHOW )
+            self.SMBPATH = '%s/%s/%s' % (config.Get( 'smb_name' ), self.TYPE, self.SHOW )
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
             

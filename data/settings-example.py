@@ -26,7 +26,7 @@ end_pad_time = 0
 force_thumbs = {''}
 
 # if you want to move your files to an external NAS, set the root location here
-# nas_mount is the local mount point definition like 'Z:/Media/Kodi'
+# nas_mount is the local mount point definition like 'Z:\\Media\\Kodi'
 nas_mount = ''
 
 # if you're using SMB for you Kodi sources, you need to list it here to trigger the library scan
