@@ -123,7 +123,7 @@ def writeFile( data, filename ):
     try:
         thefile = xbmcvfs.File( filename, 'wb' )
     except:
-        thefile = open( filename, 'wb' )
+        thefile = open( filename, 'w' )
     try:
         thefile.write( data )
         thefile.close()
