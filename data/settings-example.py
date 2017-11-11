@@ -49,6 +49,12 @@ kodiuri = 'localhost'
 # the port for websocket
 kodiwsport = 9090
 
+# list of other kodi instances to update (this is empty by default, here are some examples)
+# the remote list must match the primary type
+# remotekodilist = [{'kodiuri':'172.16.1.3', 'kodiwsport':9090}]
+# remotekodilist = [{'kodiuri':'172.16.1.3', 'kodiport':8080, 'kodiuser':'kodi', 'kodipass':'kodi'}]
+
+
 # the extensions the script uses for video files
 video_exts = {'.ts', '.mp4', '.wmv', '.m4v', '.mkv', '.mpg'}
 

@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.0~beta2
+# *  v.1.0.0~beta3
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -88,9 +88,13 @@ class Main:
 
     def _init_vars( self ):
         if use_websockets:
-            self.KODIURL = 'ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )
+            self.KODIURLS = ['ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )]
+            for remote in config.Get( 'remotekodilist' ):
+                self.KODIURLS.append( 'ws://%s:%s/jsponrpc' % (remote.get('kodiuri'), remote.get('kodiwsport') ) )
         else:
-            self.KODIURL = 'http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ), config.Get( 'kodipass' ), config.Get( 'kodiuri' ), config.Get( 'kodiport' ))
+            self.KODIURLS = ['http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ), config.Get( 'kodipass' ), config.Get( 'kodiuri' ), config.Get( 'kodiport' ))]
+            for remote in config.Get( 'remotekodilist' ):
+                self.KODIURLS.append( 'http://%s:%s@%s:%s/jsonrpc' % (remote.get('kodiuser'), remote.get('kodipass'), remote.get('kodiuri'), remote.get('kodiport')) )
         #get all the data about the recording from the NPVR database
         try:
             db = sqlite3.connect( config.Get( 'db_loc' ) )
@@ -369,8 +373,9 @@ class Main:
             self._trigger_via_websocket( jsondata )
         else:
             time.sleep( 20 ) #this is to allow time for a previous scan to finish before starting the next process
-            success, loglines, data = JSONURL.Post( self.KODIURL, data=jsondata )
-            lw.log( loglines )
+            for kodiurl in self.KODIURLS:
+                success, loglines, data = JSONURL.Post( kodiurl, data=jsondata )
+                lw.log( loglines )
 
 
     def _trigger_via_websocket( self, jsondata ):
@@ -390,10 +395,11 @@ class Main:
         def on_open(ws):
             lw.log( ['sending: ' + jsondata] )
             ws.send( jsondata )
-        ws = websocket.WebSocketApp( self.KODIURL, on_message = on_message, on_error = on_error, on_open = on_open, on_close = on_close )
-        lw.log( ['websocket connection opening'] )
-        self.WSTIME = time.time()
-        ws.run_forever()        
+        for kodiurl in self.KODIURLS:
+            ws = websocket.WebSocketApp( kodiurl, on_message = on_message, on_error = on_error, on_open = on_open, on_close = on_close )
+            lw.log( ['websocket connection opening'] )
+            self.WSTIME = time.time()
+            ws.run_forever()        
 
 
     def _update_db( self, newfilepath ):
