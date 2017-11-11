@@ -145,11 +145,11 @@ class Main:
             lw.log( loglines )
             try:
                 shutil.move( org, dest )
-            except shutil.Error, e:
+            except shutil.Error as e:
                 lw.log( ['shutil error copying %s to %s' % (org, dest), e] )
                 nas_fail = True
                 break
-            except Exception, e:
+            except Exception as e:
                 lw.log( ['unknown error copying %s to %s' % (org, dest), e] )
                 nas_fail = True
                 break
