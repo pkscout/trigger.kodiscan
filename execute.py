@@ -1,15 +1,18 @@
 # *  Credits:
 # *
-# *  v.1.0.0~beta3
+# *  v.1.0.0~beta4
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 import data.config as config
-from ConfigParser import *
 from resources.common.xlogger import Logger
 from resources.common.url import URL
 from resources.common.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
 from resources.common.transforms import replaceWords
+if sys.version_info < (3, 0):
+    from ConfigParser import *
+else:
+    from configparser import *
 if sys.version_info >= (2, 7):
     import json as _json
 else:

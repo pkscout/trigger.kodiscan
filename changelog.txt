@@ -1,3 +1,6 @@
+v.1.0.0~beta4
+- updated to work with Python3
+
 v.1.0.0~beta3
 - added ability to trigger scans on a list of remote kodi instances as well as primary
 
