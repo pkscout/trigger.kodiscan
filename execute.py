@@ -72,7 +72,7 @@ class Main:
                 lw.log( [err_str] )
                 sys.exit( err_str )
         lw.log( ['setting PID file'] )
-        success, loglines = writeFile( pid, pidfile )
+        success, loglines = writeFile( pid, pidfile, wtype='w' )
         lw.log( loglines )        
 
 
@@ -431,7 +431,7 @@ class Main:
         lw.log (loglines )
         if fin:
             newnfo = replaceWords( fin, replacement_dic )
-            success, loglines = writeFile( newnfo, newnfopath )
+            success, loglines = writeFile( newnfo, newnfopath, wtype='w' )
             lw.log( loglines )
 
 
