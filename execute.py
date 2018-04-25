@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.0~beta4
+# *  v.1.0.0~beta5
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -316,8 +316,15 @@ class Main:
             lw.log( ['probably an error when reading file with opencv, skipping thumbnail generation'] )
             return
         if config.Get( 'narrow_time' ):
-            frame_start = config.Get( 'narrow_start' )*60*fps + config.Get( 'begin_pad_time' )*60*fps
-            frame_end = config.Get( 'narrow_end' )*60*fps + config.Get( 'begin_pad_time' )*60*fps
+            custom_narrow = config.Get( 'custom_narrow' )
+            try:
+                narrow_start = custom_narrow[show][0]
+                narrow_end = custom_narrow[show][1]
+            except (KeyError, IndexError):
+                narrow_start = config.Get( 'narrow_start' )
+                narrow_end = config.Get( 'narrow_end' )
+            frame_start = narrow_start*60*fps + config.Get( 'begin_pad_time' )*60*fps
+            frame_end = narrow_end*60*fps + config.Get( 'begin_pad_time' )*60*fps
         else:
             frame_start = config.Get( 'begin_pad_time' )*60*fps
             frame_end = num_frames - config.Get( 'end_pad_time' )*60*fps

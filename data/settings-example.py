@@ -12,6 +12,11 @@ narrow_time = True
 narrow_start = 4
 narrow_end = 9
 
+# you can define time windows for thumbnails per show as well
+# if the show isn't listed it will use the defaults you set
+custom_narrow = { 'S.W.A.T.':(9,12),
+                  'Shadowhunters':(8,10) }
+
 # the system assumes you have split TV shows and movies into separate sections
 # you need to provide the TV directory name here (script assumes anything else is movies)
 # should be the same in the local NPVR recording directory and the remote NAS location
