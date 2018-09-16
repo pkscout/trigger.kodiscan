@@ -1,3 +1,6 @@
+v.1.0.0~beta6
+- added optional time delay before refreshing library to give thumbnail a chance to load
+
 v.1.0.0~beta5
 - added option for per show custom thumbnail generation time window
 

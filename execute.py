@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.0~beta5
+# *  v.1.0.0~beta6
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -379,6 +379,7 @@ class Main:
         else:
             jsondict['params'] = {"directory":self.SMBPATH + '/'}        
         jsondata = _json.dumps( jsondict )
+        time.sleep( config.Get( 'scan_delay' ) )
         if use_websockets:
             self._trigger_via_websocket( jsondata )
         else:

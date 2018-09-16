@@ -39,7 +39,10 @@ nas_mount = ''
 # don't include the final directory for the TV Shows or Movies
 smb_name = ''
 
-#if another instance of script is running, amount of time (in seconds) to wait before giving up
+# wait briefly before initially library upgrade to allow thumbnail to load
+scan_delay = 0
+
+# if another instance of script is running, amount of time (in seconds) to wait before giving up
 aborttime = 30
 
 # port, username, and password set in SYSTEM -> SETTINGS -> SERVICES -> WEBSERVER
