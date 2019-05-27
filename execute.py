@@ -13,10 +13,7 @@ if sys.version_info < (3, 0):
     from ConfigParser import *
 else:
     from configparser import *
-if sys.version_info >= (2, 7):
-    import json as _json
-else:
-    import simplejson as _json
+import json as _json
 
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
 checkPath( os.path.join( p_folderpath, 'data', 'logs', '' ) )
