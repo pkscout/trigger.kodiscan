@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.0
+# *  v.1.0.1
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -332,8 +332,12 @@ class Main:
         vidcap.set( cv2.CAP_PROP_POS_FRAMES,frame_cap )
         success, image = vidcap.read()
         if success:
-            cv2.imwrite( thumbpath, image )
-            lw.log( ['successfully created thumbnail at %s' % thumbpath] )
+            success, buffer = cv2.imencode(".jpg", image)
+            if success:
+                success, loglines = writeFile( buffer, thumbpath, wtype='wb' )
+                lw.log( loglines )
+            else:
+                lw.log( ['unable to encode thumbnail'] )
         else:
             lw.log( ['unable to create thumnail: frame out of range'] )
 

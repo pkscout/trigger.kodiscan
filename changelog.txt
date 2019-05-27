@@ -1,3 +1,6 @@
+v.1.0.1
+- workaround for cv2 not being able to write a UTF8 filename
+
 v.1.0.0
 - now Python3 only
 - added optional time delay before refreshing library to give thumbnail a chance to load
