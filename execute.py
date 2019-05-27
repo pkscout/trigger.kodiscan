@@ -4,7 +4,7 @@
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
-import data.config as config
+import resources.config as config
 from resources.common.xlogger import Logger
 from resources.common.url import URL
 from resources.common.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
@@ -19,7 +19,8 @@ else:
     import simplejson as _json
 
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
-lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logfile.log' ),
+checkPath( os.path.join( p_folderpath, 'data', 'logs', '' ) )
+lw = Logger( logfile = os.path.join( p_folderpath, 'data', 'logs', 'logfile.log' ),
              numbackups = config.Get( 'logbackups' ), logdebug = str( config.Get( 'debug' ) ) )
 
 if config.Get( 'use_websockets' ):
@@ -122,6 +123,7 @@ class Main:
             self.SMBPATH = ''
         else:
             self.SMBPATH = '%s/%s/%s' % (config.Get( 'smb_name' ), self.TYPE, self.SHOW )
+        lw.log( ['the filepath is ' + self.FILEPATH, 'the folderpath is ' + self.FOLDERPATH, 'the type is ' + self.TYPE])
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
             
@@ -170,13 +172,12 @@ class Main:
             return
         lw.log( ['there are potential shows to fix'] )
         lw.log( shows )
-        throwaway, show = os.path.split( self.FOLDERPATH )
-        if show.lower() in map( str.lower, shows ):
+        if self.SHOW.lower() in map( str.lower, shows ):
             lw.log( ['matched %s with shows to fix' % show] )
-            show_fixdir = os.path.join( fixes_dir, show )
+            show_fixdir = os.path.join( fixes_dir, self.SHOW )
             found_show = True
         elif "default" in map( str.lower, shows ):
-            lw.log( ['found default fix, applying to %s' % show] )
+            lw.log( ['found default fix, applying to %s' % self.SHOW] )
             show_fixdir = os.path.join( fixes_dir, 'default' )
             found_show = True
         if found_show:
@@ -185,15 +186,15 @@ class Main:
             exists, loglines = checkPath( jsonpath, create=False )
             lw.log( loglines )
             if exists:
-               self._jsonfix( show, jsonpath )
+               self._jsonfix( jsonpath )
                return
             exists, loglines = checkPath( nfopath, create=False )
             lw.log( loglines )
             if exists:
-               self._nfofix( show, nfopath )
+               self._nfofix( nfopath )
 
             
-    def _jsonfix( self, show, jsonpath ):
+    def _jsonfix( self, jsonpath ):
         video_files = []
         nfo_files = []
         ext_dict = {}
@@ -215,7 +216,7 @@ class Main:
                     episode = episodes[key]
                     lw.log( ['comparing file last mod of %s with json record date of %s' % (last_mod, episode['record-date'])] )
                     if last_mod == episode['record-date']:
-                        newfilename = '%s.S%sE%s.%s%s' % (show, episode['season'], episode['episode'], episode['title'], ext)
+                        newfilename = '%s.S%sE%s.%s%s' % (self.SHOW, episode['season'], episode['episode'], episode['title'], ext)
                         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
                         exists, loglines = checkPath( newfilepath, create=False )
                         lw.log( loglines )
@@ -229,7 +230,7 @@ class Main:
                         break
                     
 
-    def _nfofix( self, show, nfotemplate ):
+    def _nfofix( self, nfotemplate ):
         video_files = []
         other_files = []
         try:
@@ -273,7 +274,7 @@ class Main:
             ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
         except KeyError:
             ep_info['season'] = '0'
-            ep_info['episode'] = self._special_epnumber( show, video_files )
+            ep_info['episode'] = self._special_epnumber( video_files )
         try:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
@@ -288,20 +289,20 @@ class Main:
             ep_info['description'] = ''
         lw.log( [ep_info] )       
         if ep_info['season'] == '0':
-            self._specialseason( show, nfotemplate, ep_info )
+            self._specialseason( nfotemplate, ep_info )
         else:
             self._write_nfofile( nfotemplate, ep_info, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
-            self._generate_thumbnail( show, os.path.join( self.FOLDERPATH, self.FILEPATH ), os.path.join( self.FOLDERPATH, os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
+            self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ), os.path.join( self.FOLDERPATH, os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
 
 
-    def _generate_thumbnail( self, show, videopath, thumbpath ):
+    def _generate_thumbnail( self, videopath, thumbpath ):
         if not gen_thumbs:
             lw.log( ['thumbnail generation disabled in settings'] )
             return
         exists, loglines = checkPath( thumbpath, create=False )
         lw.log( loglines )
         if exists:
-            if not show in config.Get( 'force_thumbs' ):
+            if not self.SHOW in config.Get( 'force_thumbs' ):
                 lw.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'] )
                 return
             else:
@@ -318,8 +319,8 @@ class Main:
         if config.Get( 'narrow_time' ):
             custom_narrow = config.Get( 'custom_narrow' )
             try:
-                narrow_start = custom_narrow[show][0]
-                narrow_end = custom_narrow[show][1]
+                narrow_start = custom_narrow[self.SHOW][0]
+                narrow_end = custom_narrow[self.SHOW][1]
             except (KeyError, IndexError):
                 narrow_start = config.Get( 'narrow_start' )
                 narrow_end = config.Get( 'narrow_end' )
@@ -340,11 +341,11 @@ class Main:
             lw.log( ['unable to create thumnail: frame out of range'] )
 
 
-    def _special_epnumber( self, show, video_files ):
+    def _special_epnumber( self, video_files ):
         # this gets the next available special season episode number for use
         highest_special_ep = ''
         for videofile in video_files:
-            if videofile.startswith( '%s.S00' % show ):
+            if videofile.startswith( '%s.S00' % self.SHOW ):
                 highest_special_ep = videofile
         if highest_special_ep:
             epsplit = highest_special_ep.split( '.' )
@@ -357,14 +358,14 @@ class Main:
         return epnum
 
 
-    def _specialseason( self, show, nfotemplate, ep_info ):
-        newfileroot = '%s.S00E%s.%s' % (show, ep_info['episode'].zfill( 2 ), ep_info['title'])
+    def _specialseason( self, nfotemplate, ep_info ):
+        newfileroot = '%s.S00E%s.%s' % (self.SHOW, ep_info['episode'].zfill( 2 ), ep_info['title'])
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
         newnfoname = newfileroot + '.nfo'
         self._write_nfofile( nfotemplate, ep_info, newnfoname )
         success, loglines = renameFile( self.FILEPATH, newfilepath )
-        self._generate_thumbnail( show, newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
+        self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
         lw.log( loglines )
         self._update_db( newfilepath )
 
