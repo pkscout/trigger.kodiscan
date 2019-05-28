@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.1
+# *  v.1.0.2
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -170,7 +170,7 @@ class Main:
         lw.log( ['there are potential shows to fix'] )
         lw.log( shows )
         if self.SHOW.lower() in map( str.lower, shows ):
-            lw.log( ['matched %s with shows to fix' % show] )
+            lw.log( ['matched %s with shows to fix' % self.SHOW] )
             show_fixdir = os.path.join( fixes_dir, self.SHOW )
             found_show = True
         elif "default" in map( str.lower, shows ):
