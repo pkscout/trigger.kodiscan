@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.0.2
+# *  v.1.0.3
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
@@ -88,6 +88,7 @@ class Main:
 
 
     def _init_vars( self ):
+        self.ILLEGALCHARS = list( '<>:"/\|?*' )
         if use_websockets:
             self.KODIURLS = ['ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )]
             for remote in config.Get( 'remotekodilist' ):
@@ -342,6 +343,17 @@ class Main:
             lw.log( ['unable to create thumnail: frame out of range'] )
 
 
+    def _set_safe_name( self, thename ):
+        s_name = ''
+        lw.log( ['the illegal characters are ', self.ILLEGALCHARS, 'the replacement is _'] )
+        for c in list( thename ):
+            if c in self.ILLEGALCHARS:
+                s_name = s_name + '_'
+            else:
+                s_name = s_name + c  
+        return s_name
+
+
     def _special_epnumber( self, video_files ):
         # this gets the next available special season episode number for use
         highest_special_ep = ''
@@ -360,7 +372,7 @@ class Main:
 
 
     def _specialseason( self, nfotemplate, ep_info ):
-        newfileroot = '%s.S00E%s.%s' % (self.SHOW, ep_info['episode'].zfill( 2 ), ep_info['title'])
+        newfileroot = '%s.S00E%s.%s' % (self.SHOW, ep_info['episode'].zfill( 2 ), self._set_safe_name( ep_info['title'] ))
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
         newnfoname = newfileroot + '.nfo'
