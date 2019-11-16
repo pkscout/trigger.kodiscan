@@ -1,7 +1,5 @@
 trigger.xbmcscan
 ================
-PLEASE NOTE THAT AS OF 0.5.0 THERE ARE SUBSTATIVE CHANGES. IF YOU ARE UPGRADING FROM 0.4.x OR EARLIER, IT WOULD BE A GOOD IDEA TO USE THE SETTINGS-EXAMPLE.PY FILE AGAIN FROM SCRATH AND READ THROUGH THIS README AGAIN.
-
 This python script is designed to run in the NextPVR PostProcessing.bat file.  It takes the OID of a recording file and triggers a Kodi scan on the parent directory for the file.  The script also allows you to:
 a. rename shows based on either the air date or the information in the NextPVR database
 b. provide special season naming for episodes with no season/episode information
@@ -11,13 +9,11 @@ The script uses pid locking to ensure only one instance is running at a time and
 
 
 Prerequisites:
-1. You need to have python 2.7.x installed on your system (3.4.x might work, but I haven't tested it).
+1. You need to have python 3.6.x or later.
 <https://www.python.org/downloads/>
 
 2. You need to add the requests and xmltodict modules to your python install.
-On 2.7.x you need to install pip first (3.4.x has pip included):
-<http://stackoverflow.com/questions/4750806/how-to-install-pip-on-windows>
-Then from the cmd window:   pip install requests
+From the cmd window:        pip install requests
                             pip install xmltodict
                             
 3. To use the faster scan complete check, you need to add the websocket-client module to your python install.  After install the script will use websockets to communicate with Kodi unless you turn it off.  See below for information on configuring Kodi to use websockets for communication.
@@ -42,7 +38,7 @@ The script has a set of default settings described in settings-example.py.  Revi
 Usage:
 The best thing to do is add the following line to you PostProcessing.bat file in the NPVR Scripts directory:
 
-"C:\Python27\python.exe" "C:\CustomApps\trigger.kodiscan\execute.py" %3
+"C:\Python36\python.exe" "C:\CustomApps\trigger.kodiscan\execute.py" %3
 
 Please change the python call to match the location of your python install.  Note that even if you have python in the system path, calling the script with just "python" doesn't seem to work.
 
