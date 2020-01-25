@@ -261,10 +261,10 @@ class Main:
             else:
                 other_files.append( item )
         self._nfo_prune( other_files, video_files )
-        self._nfo_create()
+        self._nfo_create( video_files, nfotemplate)
 
 
-    def _nfo_create( self ):
+    def _nfo_create( self, video_files, nfotemplate ):
         ep_info = {}
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         try:
