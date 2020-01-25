@@ -166,7 +166,11 @@ class Main:
         fixes_dir = os.path.join( p_folderpath, 'data', 'fixes' )
         try:
             shows = os.listdir( fixes_dir )
-        except:
+        except FileNotFoundError:
+            lw.log( ['there is no fixes directory present'] )
+            return
+        except Exception as e:
+            lw.log( ['unknown error getting list of files in fixes directory', e] )
             return
         lw.log( ['there are potential shows to fix'] )
         lw.log( shows )
