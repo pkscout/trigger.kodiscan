@@ -3,7 +3,7 @@
 # *  v.1.0.3
 # *  original Trigger Kodi Scan code by pkscout
 
-import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
+import atexit, argparse, os, random, shutil, sqlite3, sys, time, xmltodict
 import resources.config as config
 from resources.lib.xlogger import Logger
 from resources.lib.url import URL
@@ -57,8 +57,8 @@ class Main:
             if self.TYPE == config.Get( 'tv_dir' ):
                 self._fixes()
             self._trigger_scan()
-        
-                
+
+
     def _setPID( self ):
         random.seed()
         time.sleep( random.randint( 1, 10 ) )
@@ -71,7 +71,7 @@ class Main:
                 sys.exit( err_str )
         lw.log( ['setting PID file'] )
         success, loglines = writeFile( pid, pidfile, wtype='w' )
-        lw.log( loglines )        
+        lw.log( loglines )
 
 
     def _parse_argv( self ):
@@ -94,9 +94,15 @@ class Main:
             for remote in config.Get( 'remotekodilist' ):
                 self.KODIURLS.append( 'ws://%s:%s/jsponrpc' % (remote.get('kodiuri'), remote.get('kodiwsport') ) )
         else:
-            self.KODIURLS = ['http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ), config.Get( 'kodipass' ), config.Get( 'kodiuri' ), config.Get( 'kodiport' ))]
+            self.KODIURLS = ['http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ),
+                             config.Get( 'kodipass' ),
+                             config.Get( 'kodiuri' ),
+                             config.Get( 'kodiport' ))]
             for remote in config.Get( 'remotekodilist' ):
-                self.KODIURLS.append( 'http://%s:%s@%s:%s/jsonrpc' % (remote.get('kodiuser'), remote.get('kodipass'), remote.get('kodiuri'), remote.get('kodiport')) )
+                self.KODIURLS.append( 'http://%s:%s@%s:%s/jsonrpc' % (remote.get('kodiuser'),
+                                      remote.get('kodipass'),
+                                      remote.get('kodiuri'),
+                                      remote.get('kodiport')) )
         #get all the data about the recording from the NPVR database
         try:
             db = sqlite3.connect( config.Get( 'db_loc' ) )
@@ -124,7 +130,7 @@ class Main:
         lw.log( ['the filepath is ' + self.FILEPATH, 'the folderpath is ' + self.FOLDERPATH, 'the type is ' + self.TYPE])
         self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
         lw.log( [self.EVENT_DETAILS] )
-            
+
 
     def _nas_copy( self ):
         nas_fail = True
@@ -141,7 +147,7 @@ class Main:
                 filename = onefile
             org = os.path.join( self.FOLDERPATH, onefile )
             dest = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, onefile )
-            exists, loglines = checkPath( os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW), create=True )
+            exists, loglines = checkPath( os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW) )
             lw.log( loglines )
             try:
                 shutil.move( org, dest )
@@ -185,21 +191,18 @@ class Main:
         if found_show:
             nfopath = os.path.join( show_fixdir, 'episode.nfo')
             jsonpath = os.path.join( show_fixdir, 'episode.json')
-            exists, loglines = checkPath( jsonpath, create=False )
+            exists, loglines = checkPath( jsonpath, createdir=False )
             lw.log( loglines )
             if exists:
                self._jsonfix( jsonpath )
                return
-            exists, loglines = checkPath( nfopath, create=False )
+            exists, loglines = checkPath( nfopath, createdir=False )
             lw.log( loglines )
             if exists:
                self._nfofix( nfopath )
 
-            
+
     def _jsonfix( self, jsonpath ):
-        video_files = []
-        nfo_files = []
-        ext_dict = {}
         try:
             items = os.listdir( self.FOLDERPATH )
         except OSError:
@@ -220,7 +223,7 @@ class Main:
                     if last_mod == episode['record-date']:
                         newfilename = '%s.S%sE%s.%s%s' % (self.SHOW, episode['season'], episode['episode'], episode['title'], ext)
                         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                        exists, loglines = checkPath( newfilepath, create=False )
+                        exists, loglines = checkPath( newfilepath, createdir=False )
                         lw.log( loglines )
                         if not exists:
                             success, loglines = renameFile( processfilepath, newfilepath )
@@ -230,7 +233,7 @@ class Main:
                         else:
                             lw.log( ['%s already has the correct file name' % processfilepath] )
                         break
-                    
+
 
     def _nfofix( self, nfotemplate ):
         video_files = []
@@ -250,25 +253,18 @@ class Main:
                         item = fileroot[:-len( rename_end )] + config.Get( 'thumb_end' ) + ext
                         new_thumb = os.path.join( self.FOLDERPATH, item )
                         success, loglines = renameFile( old_thumb, new_thumb )
-                        lw.log( loglines )                        
+                        lw.log( loglines )
             if item in config.Get( 'protected_files' ):
                 pass
             elif ext in config.Get( 'video_exts' ):
                 video_files.append( item )
             else:
                 other_files.append( item )
-        lw.log( ['checking files to see if they need to be deleted'] )
-        lw.log( ['other files:', other_files, 'video files:', video_files] )
-        for one_file in other_files:
-            match = False
-            other_fileroot, throwaway = os.path.splitext( one_file )
-            for one_video in video_files:
-                video_root, throwaway = os.path.splitext( one_video )
-                if (other_fileroot == video_root) or (other_fileroot == video_root + config.Get( 'thumb_end' )):
-                    match = True
-            if not match:
-                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
-                lw.log( loglines )
+        self._nfo_prune( other_files, video_files )
+        self._nfo_create()
+
+
+    def _nfo_create( self ):
         ep_info = {}
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
         try:
@@ -281,30 +277,47 @@ class Main:
             ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
         except KeyError:
             ep_info['title'] = ep_info['airdate']
-        if ep_info['title'] == None:
+        if ep_info['title'] is None:
             ep_info['title'] = ep_info['airdate']
         try:
             ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
         except KeyError:
             ep_info['description'] = ''
-        if ep_info['description'] == None:
+        if ep_info['description'] is None:
             ep_info['description'] = ''
-        lw.log( [ep_info] )       
+        lw.log( [ep_info] )
         if ep_info['season'] == '0':
             self._specialseason( nfotemplate, ep_info )
         else:
             self._write_nfofile( nfotemplate, ep_info, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
-            self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ), os.path.join( self.FOLDERPATH, os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
+            self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ),
+                                      os.path.join( self.FOLDERPATH,
+                                      os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
+
+
+    def _nfo_prune( self, other_files, video_files ):
+        lw.log( ['checking files to see if they need to be deleted'] )
+        lw.log( ['other files:', other_files, 'video files:', video_files] )
+        for one_file in other_files:
+            match = False
+            other_fileroot, throwaway = os.path.splitext( one_file )
+            for one_video in video_files:
+                video_root, throwaway = os.path.splitext( one_video )
+                if (other_fileroot == video_root) or (other_fileroot == video_root + config.Get( 'thumb_end' )):
+                    match = True
+            if not match:
+                success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
+                lw.log( loglines )
 
 
     def _generate_thumbnail( self, videopath, thumbpath ):
         if not gen_thumbs:
             lw.log( ['thumbnail generation disabled in settings'] )
             return
-        exists, loglines = checkPath( thumbpath, create=False )
+        exists, loglines = checkPath( thumbpath, createdir=False )
         lw.log( loglines )
         if exists:
-            if not self.SHOW in config.Get( 'force_thumbs' ):
+            if self.SHOW not in config.Get( 'force_thumbs' ):
                 lw.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'] )
                 return
             else:
@@ -354,7 +367,7 @@ class Main:
             if c in self.ILLEGALCHARS:
                 s_name = s_name + '_'
             else:
-                s_name = s_name + c  
+                s_name = s_name + c
         return s_name
 
 
@@ -395,7 +408,7 @@ class Main:
         if self.SMBPATH == '':
             jsondict['params'] = {"directory":self.FOLDERPATH}
         else:
-            jsondict['params'] = {"directory":self.SMBPATH + '/'}        
+            jsondict['params'] = {"directory":self.SMBPATH + '/'}
         jsondata = _json.dumps( jsondict )
         time.sleep( config.Get( 'scan_delay' ) )
         if use_websockets:
@@ -428,7 +441,7 @@ class Main:
             ws = websocket.WebSocketApp( kodiurl, on_message = on_message, on_error = on_error, on_open = on_open, on_close = on_close )
             lw.log( ['websocket connection opening'] )
             self.WSTIME = time.time()
-            ws.run_forever()        
+            ws.run_forever()
 
 
     def _update_db( self, newfilepath ):
@@ -437,7 +450,7 @@ class Main:
         cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
         db.commit()
         db.close()
-        lw.log( ['updated NPVR filename of OID %s to %s' % (self.OID, newfilepath)] )                   
+        lw.log( ['updated NPVR filename of OID %s to %s' % (self.OID, newfilepath)] )
 
 
     def _write_nfofile( self, nfotemplate, ep_info, newnfoname ):
@@ -448,7 +461,7 @@ class Main:
             '[TITLE]' : ep_info['title'],
             '[DESC]' : ep_info['description'],
             '[AIRDATE]' : ep_info["airdate"]}
-        exists, loglines = checkPath( newnfopath, create=False )
+        exists, loglines = checkPath( newnfopath, createdir=False )
         lw.log( loglines )
         if exists:
             success, loglines = deleteFile( newnfopath )
