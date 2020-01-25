@@ -5,10 +5,10 @@
 
 import atexit, argparse, datetime, os, random, shutil, sqlite3, sys, time, xmltodict
 import resources.config as config
-from resources.common.xlogger import Logger
-from resources.common.url import URL
-from resources.common.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
-from resources.common.transforms import replaceWords
+from resources.lib.xlogger import Logger
+from resources.lib.url import URL
+from resources.lib.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
+from resources.lib.transforms import replaceWords
 if sys.version_info < (3, 0):
     from ConfigParser import *
 else:
