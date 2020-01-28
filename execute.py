@@ -3,7 +3,7 @@
 # *  v.1.1.0
 # *  original Trigger Kodi Scan code by pkscout
 
-import atexit, argparse, os, random, shutil, sys, time, xmltodict
+import atexit, argparse, os, random, shutil, sys, time
 import resources.config as config
 from resources.lib.xlogger import Logger
 from resources.lib.url import URL
@@ -106,6 +106,7 @@ class Main:
                                       remote.get('kodiuri'),
                                       remote.get('kodiport')) )
         self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo()
+        lw.log( loglines )
         self.FILEPATH = self.EPISODEINFO['filepath']
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )

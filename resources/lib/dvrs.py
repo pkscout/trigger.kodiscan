@@ -6,10 +6,11 @@ class NextPVR:
     def __init__( self, oid, config ):
         self.OID = oid
         self.DBLOC = config.Get( 'db_loc' )
+        self.LOGLINES = []
 
 
     def GetRecordingInfo( self ):
-        loglines = []
+        self.LOGLINES = []
         try:
             db = sqlite3.connect( self.DBLOC )
             cursor = db.cursor()
@@ -30,6 +31,22 @@ class NextPVR:
         except KeyError:
             loglines.append( 'no data returned from NPVR database' )
             event_details = []
+        ep_info = self._set_ep_info( event_details )
+        return ep_info, self.LOGLINES
+
+
+    def UpdateDVR( self, newfilepath ):
+        self.LOGLINES = []
+        db = sqlite3.connect( self.DBLOC )
+        cursor = db.cursor()
+        cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
+        db.commit()
+        db.close()
+        loglines.append( 'updated NPVR filename of OID %s to %s' % (self.OID, newfilepath) )
+        return self.LOGLINES
+
+
+    def _set_ep_info( self, event_details ):
         ep_info = {}
         ep_info['filepath'] = filepath
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( filepath ) ) )
@@ -53,19 +70,5 @@ class NextPVR:
             ep_info['description'] = ''
         if ep_info['description'] is None:
             ep_info['description'] = ''
-        loglines.extend( [ep_info] )
-        return ep_info, loglines
-
-
-    def UpdateDVR( self, newfilepath ):
-        loglines = []
-        db = sqlite3.connect( self.DBLOC )
-        cursor = db.cursor()
-        cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
-        db.commit()
-        db.close()
-        loglines.append( 'updated NPVR filename of OID %s to %s' % (self.OID, newfilepath) )
-        return loglines
-
-
-
+        self.LOGLINES.extend( [ep_info] )
+        return ep_info
