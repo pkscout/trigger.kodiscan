@@ -1,18 +1,15 @@
 # *  Credits:
 # *
-# *  v.1.0.3
+# *  v.1.1.0
 # *  original Trigger Kodi Scan code by pkscout
 
-import atexit, argparse, os, random, shutil, sqlite3, sys, time, xmltodict
+import atexit, argparse, os, random, shutil, sys, time, xmltodict
 import resources.config as config
 from resources.lib.xlogger import Logger
 from resources.lib.url import URL
 from resources.lib.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
 from resources.lib.transforms import replaceWords
-if sys.version_info < (3, 0):
-    from ConfigParser import *
-else:
-    from configparser import *
+from resources.lib.dvrs import NextPVR
 import json as _json
 
 p_folderpath, p_filename = os.path.split( os.path.realpath(__file__) )
@@ -51,12 +48,13 @@ class Main:
         self._setPID()
         self._parse_argv()
         self._init_vars()
-        if not (self.FILEPATH == '' or config.Get( 'nas_mount' ) == ''):
-            self._nas_copy()
-        if not self.FILEPATH == '':
-            if self.TYPE == config.Get( 'tv_dir' ):
-                self._fixes()
-            self._trigger_scan()
+        if self.DVR:
+            if not (self.FILEPATH == '' or config.Get( 'nas_mount' ) == ''):
+                self._nas_copy()
+            if not self.FILEPATH == '':
+                if self.TYPE == config.Get( 'tv_dir' ):
+                    self._fixes()
+                self._trigger_scan()
 
 
     def _setPID( self ):
@@ -88,6 +86,10 @@ class Main:
 
 
     def _init_vars( self ):
+        self.DVR = self._pick_dvr()
+        if not self.DVR:
+            lw.log( ['invalid DVR configuration, exiting'] )
+            return
         self.ILLEGALCHARS = list( '<>:"/\|?*' )
         if use_websockets:
             self.KODIURLS = ['ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )]
@@ -103,33 +105,25 @@ class Main:
                                       remote.get('kodipass'),
                                       remote.get('kodiuri'),
                                       remote.get('kodiport')) )
-        #get all the data about the recording from the NPVR database
-        try:
-            db = sqlite3.connect( config.Get( 'db_loc' ) )
-            cursor = db.cursor()
-            cursor.execute( '''SELECT filename, event_details from SCHEDULED_RECORDING WHERE oid=?''', ( self.OID, ) )
-            recording_info = cursor.fetchone()
-            db.close()
-        except sqlite3.OperationalError:
-            lw.log( ['error connecting to NPVR database, exiting.'] )
-            self.FILEPATH = ''
-            return
-        try:
-            self.FILEPATH = recording_info[0]
-        except KeyError:
-            lw.log( ['no data returned from NPVR database, exiting.'] )
-            self.FILEPATH = ''
-            return
+        self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo()
+        self.FILEPATH = self.EPISODEINFO['filepath']
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )
-        throwaway, self.TYPE = os.path.split( remainder )
-        if config.Get( 'smb_name' ) == '':
-            self.SMBPATH = ''
+        self.TYPE = os.path.split( remainder )[1]
+        kodi_source_root = config.Get( 'kodi_source_root' )
+        if kodi_source_root:
+            self.KODISOURCE = '%s/%s/%s' % (kodi_source_root, self.TYPE, self.SHOW )
         else:
-            self.SMBPATH = '%s/%s/%s' % (config.Get( 'smb_name' ), self.TYPE, self.SHOW )
+            self.KODISOURCE = ''
         lw.log( ['the filepath is ' + self.FILEPATH, 'the folderpath is ' + self.FOLDERPATH, 'the type is ' + self.TYPE])
-        self.EVENT_DETAILS = xmltodict.parse( recording_info[1] )
-        lw.log( [self.EVENT_DETAILS] )
+
+
+    def _pick_dvr( self ):
+        dvr_type = config.Get( 'dvr_type' ).lower()
+        if dvr_type == 'nextpvr':
+            return NextPVR( self.OID, config )
+        else:
+            return None
 
 
     def _nas_copy( self ):
@@ -164,7 +158,7 @@ class Main:
         else:
             self.FILEPATH = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, filename )
             self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
-            self._update_db( self.FILEPATH )
+            self.DVR.UpdateDVR( self.FILEPATH )
 
 
     def _fixes( self ):
@@ -229,7 +223,7 @@ class Main:
                             success, loglines = renameFile( processfilepath, newfilepath )
                             lw.log( loglines )
                             if success:
-                                self._update_db( newfilepath )
+                                self.DVR.UpdateDVR( newfilepath )
                         else:
                             lw.log( ['%s already has the correct file name' % processfilepath] )
                         break
@@ -265,31 +259,10 @@ class Main:
 
 
     def _nfo_create( self, video_files, nfotemplate ):
-        ep_info = {}
-        ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( self.FILEPATH ) ) )
-        try:
-            ep_info['season'] = self.EVENT_DETAILS["Event"]["Season"]
-            ep_info['episode'] = self.EVENT_DETAILS["Event"]["Episode"]
-        except KeyError:
-            ep_info['season'] = '0'
-            ep_info['episode'] = self._special_epnumber( video_files )
-        try:
-            ep_info['title'] = self.EVENT_DETAILS["Event"]["SubTitle"]
-        except KeyError:
-            ep_info['title'] = ep_info['airdate']
-        if ep_info['title'] is None:
-            ep_info['title'] = ep_info['airdate']
-        try:
-            ep_info['description'] = self.EVENT_DETAILS["Event"]["Description"]
-        except KeyError:
-            ep_info['description'] = ''
-        if ep_info['description'] is None:
-            ep_info['description'] = ''
-        lw.log( [ep_info] )
-        if ep_info['season'] == '0':
-            self._specialseason( nfotemplate, ep_info )
+        if self.EPISODEINFO['season'] == '0':
+            self._specialseason( nfotemplate )
         else:
-            self._write_nfofile( nfotemplate, ep_info, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
+            self._write_nfofile( nfotemplate, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
             self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ),
                                       os.path.join( self.FOLDERPATH,
                                       os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
@@ -388,16 +361,17 @@ class Main:
         return epnum
 
 
-    def _specialseason( self, nfotemplate, ep_info ):
-        newfileroot = '%s.S00E%s.%s' % (self.SHOW, ep_info['episode'].zfill( 2 ), self._set_safe_name( ep_info['title'] ))
+    def _specialseason( self, nfotemplate ):
+        newfileroot = '%s.S00E%s.%s' % (self.SHOW, self.EPISODEINFO['episode'].zfill( 2 ), self._set_safe_name( self.EPISODEINFO['title'] ))
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
         newnfoname = newfileroot + '.nfo'
-        self._write_nfofile( nfotemplate, ep_info, newnfoname )
+        self._write_nfofile( nfotemplate, newnfoname )
         success, loglines = renameFile( self.FILEPATH, newfilepath )
-        self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
         lw.log( loglines )
-        self._update_db( newfilepath )
+        self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
+        loglines = self.DVR.UpdateDVR( newfilepath )
+        lw.log( loglines )
 
 
     def _trigger_scan( self ):
@@ -405,10 +379,10 @@ class Main:
         jsondict['id'] = '1'
         jsondict['jsonrpc'] = '2.0'
         jsondict['method'] = "VideoLibrary.Scan"
-        if self.SMBPATH == '':
+        if self.KODISOURCE == '':
             jsondict['params'] = {"directory":self.FOLDERPATH}
         else:
-            jsondict['params'] = {"directory":self.SMBPATH + '/'}
+            jsondict['params'] = {"directory":self.KODISOURCE + '/'}
         jsondata = _json.dumps( jsondict )
         time.sleep( config.Get( 'scan_delay' ) )
         if use_websockets:
@@ -444,23 +418,14 @@ class Main:
             ws.run_forever()
 
 
-    def _update_db( self, newfilepath ):
-        db = sqlite3.connect( config.Get( 'db_loc' ) )
-        cursor = db.cursor()
-        cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
-        db.commit()
-        db.close()
-        lw.log( ['updated NPVR filename of OID %s to %s' % (self.OID, newfilepath)] )
-
-
-    def _write_nfofile( self, nfotemplate, ep_info, newnfoname ):
+    def _write_nfofile( self, nfotemplate, newnfoname ):
         newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
         replacement_dic = {
-            '[SEASON]': ep_info['season'],
-            '[EPISODE]' : ep_info['episode'],
-            '[TITLE]' : ep_info['title'],
-            '[DESC]' : ep_info['description'],
-            '[AIRDATE]' : ep_info["airdate"]}
+            '[SEASON]': self.EPISODEINFO['season'],
+            '[EPISODE]' : self.EPISODEINFO['episode'],
+            '[TITLE]' : self.EPISODEINFO['title'],
+            '[DESC]' : self.EPISODEINFO['description'],
+            '[AIRDATE]' : self.EPISODEINFO["airdate"]}
         exists, loglines = checkPath( newnfopath, createdir=False )
         lw.log( loglines )
         if exists:
