@@ -18,20 +18,20 @@ class NextPVR:
             recording_info = cursor.fetchone()
             db.close()
         except sqlite3.OperationalError:
-            loglines.append( 'error connecting to NPVR database' )
+            self.LOGLINES.append( 'error connecting to NPVR database' )
             filepath = ''
         try:
             filepath = recording_info[0]
         except KeyError:
-            loglines.append( 'no data returned from NPVR database' )
+            self.LOGLINES.append( 'no data returned from NPVR database' )
             filepath = ''
-        loglines.append( 'the filepath is %s' % filepath )
+        self.LOGLINES.append( 'the filepath is %s' % filepath )
         try:
             event_details = xmltodict.parse( recording_info[1] )
         except KeyError:
-            loglines.append( 'no data returned from NPVR database' )
+            self.LOGLINES.append( 'no data returned from NPVR database' )
             event_details = []
-        ep_info = self._set_ep_info( event_details )
+        ep_info = self._set_ep_info( event_details, filepath )
         return ep_info, self.LOGLINES
 
 
@@ -42,11 +42,11 @@ class NextPVR:
         cursor.execute( '''UPDATE SCHEDULED_RECORDING SET filename=? WHERE oid=?''', ( newfilepath, self.OID ) )
         db.commit()
         db.close()
-        loglines.append( 'updated NPVR filename of OID %s to %s' % (self.OID, newfilepath) )
+        self.LOGLINES.append( 'updated NPVR filename of OID %s to %s' % (self.OID, newfilepath) )
         return self.LOGLINES
 
 
-    def _set_ep_info( self, event_details ):
+    def _set_ep_info( self, event_details, filepath ):
         ep_info = {}
         ep_info['filepath'] = filepath
         ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( filepath ) ) )
