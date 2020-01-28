@@ -1,3 +1,7 @@
+v.1.1.0
+- moved DVR specific functionality to module to make it easer to add other DVR support
+- renamed some poorly named settings and variables
+
 v.1.0.3
 - fix for error when episode title has illegal file characters in name
 
