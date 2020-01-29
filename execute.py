@@ -49,12 +49,14 @@ class Main:
         self._parse_argv()
         self._init_vars()
         if self.DVR:
-            if not (self.FILEPATH == '' or config.Get( 'nas_mount' ) == ''):
+            if self.FILEPATH and config.Get( 'nas_mount' ):
                 self._nas_copy()
-            if not self.FILEPATH == '':
+            if self.FILEPATH:
                 if self.TYPE == config.Get( 'tv_dir' ):
                     self._fixes()
                 self._trigger_scan()
+                if config.Get( 'doubletap' ):
+                    self._trigger_scan()
 
 
     def _setPID( self ):
