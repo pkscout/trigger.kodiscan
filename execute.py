@@ -263,6 +263,7 @@ class Main:
 
     def _nfo_create( self, video_files, nfotemplate ):
         if self.EPISODEINFO['season'] == '0':
+            self.EPISODEINFO['episode'] = self._special_epnumber( video_files )
             self._specialseason( nfotemplate )
         else:
             self._write_nfofile( nfotemplate, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
