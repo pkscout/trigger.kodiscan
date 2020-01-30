@@ -264,7 +264,7 @@ class Main:
     def _nfo_create( self, video_files, nfotemplate ):
         if self.EPISODEINFO['season'] == '0':
             self.EPISODEINFO['episode'] = self._special_epnumber( video_files )
-            self._specialseason( nfotemplate )
+            self._special_season( nfotemplate )
         else:
             self._write_nfofile( nfotemplate, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
             self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ),
@@ -365,7 +365,7 @@ class Main:
         return epnum
 
 
-    def _specialseason( self, nfotemplate ):
+    def _special_season( self, nfotemplate ):
         newfileroot = '%s.S00E%s.%s' % (self.SHOW, self.EPISODEINFO['episode'].zfill( 2 ), self._set_safe_name( self.EPISODEINFO['title'] ))
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
