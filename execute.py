@@ -1,13 +1,13 @@
 # *  Credits:
 # *
-# *  v.1.1.0
+# *  v.1.1.1
 # *  original Trigger Kodi Scan code by pkscout
 
-import atexit, argparse, os, random, shutil, sys, time
+import atexit, argparse, os, random, sys, time
 import resources.config as config
 from resources.lib.xlogger import Logger
 from resources.lib.url import URL
-from resources.lib.fileops import readFile, writeFile, deleteFile, renameFile, checkPath
+from resources.lib.fileops import readFile, writeFile, deleteFile, moveFile, renameFile, checkPath
 from resources.lib.transforms import replaceWords
 from resources.lib.dvrs import NextPVR
 import json as _json
@@ -130,7 +130,6 @@ class Main:
 
 
     def _nas_copy( self ):
-        nas_fail = True
         try:
             lw.log( ['getting list of files from ' + self.FOLDERPATH] )
             files = os.listdir( self.FOLDERPATH )
@@ -146,18 +145,11 @@ class Main:
             dest = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, onefile )
             exists, loglines = checkPath( os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW) )
             lw.log( loglines )
-            try:
-                shutil.move( org, dest )
-            except shutil.Error as e:
-                lw.log( ['shutil error copying %s to %s' % (org, dest), e] )
-                nas_fail = True
-                break
-            except Exception as e:
-                lw.log( ['unknown error copying %s to %s' % (org, dest), e] )
-                nas_fail = True
-                break
-        if nas_fail:
+            success, loglines = moveFile( org, dest )
+            lw.log( loglines )
+        if not success:
             self.FILEPATH = ''
+            break
         else:
             self.FILEPATH = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, filename )
             self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
