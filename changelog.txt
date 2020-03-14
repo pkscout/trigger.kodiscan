@@ -1,3 +1,7 @@
+v.1.1.1
+- cleaned up code for moving and renaming files
+- changed logs to rotate daily for seven days instead of by log size
+
 v.1.1.0
 - moved DVR specific functionality to module to make it easer to add other DVR support
 - renamed some poorly named settings and variables
