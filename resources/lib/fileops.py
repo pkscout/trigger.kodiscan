@@ -153,7 +153,7 @@ def readFile( filename ):
 
 
 def renameFile ( thesource, thedest ):
-    loglines = []
+    log_lines = []
     try:
         log_lines.append( 'renaming file %s to %s' % (thesource, thedest) )
         _rename( thesource, thedest )

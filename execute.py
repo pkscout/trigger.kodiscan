@@ -138,7 +138,6 @@ class Main:
             return
         lw.log( ['found: ', files] )
         for onefile in files:
-            nas_fail = False
             if (os.path.splitext( onefile )[1] in config.Get( 'video_exts' )):
                 filename = onefile
             org = os.path.join( self.FOLDERPATH, onefile )
@@ -147,9 +146,10 @@ class Main:
             lw.log( loglines )
             success, loglines = moveFile( org, dest )
             lw.log( loglines )
+            if not success:
+                break
         if not success:
             self.FILEPATH = ''
-            break
         else:
             self.FILEPATH = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, filename )
             self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
