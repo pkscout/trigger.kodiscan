@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.1.1
+# *  v.1.1.2
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, os, random, sys, time

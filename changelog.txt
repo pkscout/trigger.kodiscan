@@ -1,3 +1,6 @@
+v.1.1.2
+- improved handling when file last modification isn't returned properly
+
 v.1.1.1
 - cleaned up code for moving and renaming files
 - changed logs to rotate daily for seven days instead of by log size
