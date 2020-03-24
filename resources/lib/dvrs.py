@@ -1,4 +1,4 @@
-#v.1.0.1
+#v.1.0.2
 
 import os, sqlite3, time, xmltodict
 
@@ -49,7 +49,12 @@ class NextPVR:
     def _set_ep_info( self, event_details, filepath ):
         ep_info = {}
         ep_info['filepath'] = filepath
-        ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( filepath ) ) )
+        try:
+            ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( filepath ) ) )
+        except OSError:
+            ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime() )
+        if ep_info['airdate'] == '1969-12-31':
+            ep_info['airdate'] = time.strftime( '%Y-%m-%d', time.localtime() )
         try:
             ep_info['season'] = event_details["Event"]["Season"]
         except KeyError:
