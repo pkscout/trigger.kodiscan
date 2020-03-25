@@ -1,3 +1,6 @@
+v.1.1.3
+- fixes for instances where renaming file doesn't work
+
 v.1.1.2
 - improved handling when file last modification isn't returned properly
 
