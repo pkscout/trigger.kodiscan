@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.1.2
+# *  v.1.1.3
 # *  original Trigger Kodi Scan code by pkscout
 
 import atexit, argparse, os, random, sys, time
@@ -365,9 +365,13 @@ class Main:
         self._write_nfofile( nfotemplate, newnfoname )
         success, loglines = renameFile( self.FILEPATH, newfilepath )
         lw.log( loglines )
-        self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
-        loglines = self.DVR.UpdateDVR( newfilepath )
-        lw.log( loglines )
+        if not success:
+            success, loglines = moveFile( self.FILEPATH, newfilepath )
+            lw.log( loglines )
+        if success:
+            self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
+            loglines = self.DVR.UpdateDVR( newfilepath )
+            lw.log( loglines )
 
 
     def _trigger_scan( self ):
