@@ -1,4 +1,4 @@
-#v.0.4.2
+#v.0.4.3
 
 try:
     from kodi_six import xbmc
@@ -70,7 +70,7 @@ class Logger( object ):
 
 
     def _output_xbmc( self, line, loglevel ):
-        if self.LOGDEBUG or (loglevel != xbmc.LOGDEBUG and loglevel != xbmc.LOGINFO):
+        if self.LOGDEBUG or loglevel != xbmc.LOGDEBUG:
             try:
                 xbmc.log( "%s %s" % (self.LOGPREAMBLE, line.__str__()), loglevel)
             except Exception as e:
