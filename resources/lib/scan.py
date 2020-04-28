@@ -116,7 +116,7 @@ class Main:
         if use_websockets:
             self.KODIURLS = ['ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )]
             for remote in config.Get( 'remotekodilist' ):
-                self.KODIURLS.append( 'ws://%s:%s/jsponrpc' % (remote.get('kodiuri'), remote.get('kodiwsport') ) )
+                self.KODIURLS.append( 'ws://%s:%s/jsponrpc' % (remote.get('kodiuri'), remote.get('kodiwsport', default=config.Get( 'kodiwsport' )) ) )
         else:
             self.KODIURLS = ['http://%s:%s@%s:%s/jsonrpc' % (config.Get( 'kodiuser' ),
                              config.Get( 'kodipass' ),
