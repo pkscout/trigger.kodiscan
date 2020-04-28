@@ -24,14 +24,14 @@ class NextPVR:
         try:
             filepath = recording_info[0]
         except KeyError:
-            self.LOGLINES.append( 'no data returned from NPVR database' )
+            self.LOGLINES.append( 'no file path data returned from NPVR database' )
             return {}, self.LOGLINES
         self.LOGLINES.append( 'the filepath is %s' % filepath )
         try:
             event_details = xmltodict.parse( recording_info[1] )
         except KeyError:
-            self.LOGLINES.append( 'no data returned from NPVR database' )
-            return {}, self.LOGLINES
+            self.LOGLINES.append( 'no episode info data returned from NPVR database, creating basic episode info on the fly' )
+            event_details = {}
         ep_info = self._set_ep_info( event_details, filepath )
         return ep_info, self.LOGLINES
 
