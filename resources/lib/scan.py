@@ -12,7 +12,7 @@ import json as _json
 p_folderpath, p_filename = os.path.split( sys.argv[0] )
 logpath = os.path.join( p_folderpath, 'data', 'logs', '' )
 checkPath( logpath )
-lw = Logger( logfile = os.path.join( logpath, 'logfile.log' ), numbackups = config.Get( 'logbackups' ), logdebug = config.Get( 'debug' ) )
+lw = Logger( logfile=os.path.join( logpath, 'logfile.log' ), numbackups=config.Get( 'logbackups' ), logdebug=config.Get( 'debug' ) )
 
 if config.Get( 'use_websockets' ):
     try:
