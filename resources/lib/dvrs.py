@@ -1,11 +1,12 @@
 #v.1.0.2
 
 import os, sqlite3, time, xmltodict
+from resources.lib.fileops import osPathFromString
 
 class NextPVR:
     def __init__( self, oid, config ):
         self.OID = oid
-        self.DBLOC = config.Get( 'db_loc' )
+        self.DBLOC = osPathFromString( config.Get( 'db_loc' ) )
         self.LOGLINES = []
 
 
@@ -19,18 +20,18 @@ class NextPVR:
             db.close()
         except sqlite3.OperationalError:
             self.LOGLINES.append( 'error connecting to NPVR database' )
-            filepath = ''
+            return {}, self.LOGLINES
         try:
             filepath = recording_info[0]
         except KeyError:
             self.LOGLINES.append( 'no data returned from NPVR database' )
-            filepath = ''
+            return {}, self.LOGLINES
         self.LOGLINES.append( 'the filepath is %s' % filepath )
         try:
             event_details = xmltodict.parse( recording_info[1] )
         except KeyError:
             self.LOGLINES.append( 'no data returned from NPVR database' )
-            event_details = []
+            return {}, self.LOGLINES
         ep_info = self._set_ep_info( event_details, filepath )
         return ep_info, self.LOGLINES
 

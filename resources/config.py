@@ -27,7 +27,7 @@ defaults = { 'dvr_type': 'nextpvr',
              'protected_files': { 'tvshow.nfo', 'poster.jpg', 'poster.png',
                                   'banner.jpg', 'banner.png', 'fanart.jpg',
                                   'fanart.png', 'folder.jpg', 'folder.png' },
-             'db_loc': 'C:\\Users\\Public\\NPVR\\npvr.db3',
+             'db_loc': '/C:/Users/Public/NPVR/npvr.db3',
              'logbackups': 7,
              'debug': False }
 
