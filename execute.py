@@ -1,6 +1,6 @@
 # *  Credits:
 # *
-# *  v.1.1.4
+# *  v.1.1.5
 # *  original Trigger Kodi Scan code by pkscout
 
 from resources.lib.scan import Main

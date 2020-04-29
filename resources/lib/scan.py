@@ -1,4 +1,4 @@
-# v.1.1.4
+# v.1.1.5
 
 import atexit, argparse, os, random, sys, time
 import resources.config as config
@@ -123,10 +123,10 @@ class Main:
                              config.Get( 'kodiuri' ),
                              config.Get( 'kodiport' ))]
             for remote in config.Get( 'remotekodilist' ):
-                self.KODIURLS.append( 'http://%s:%s@%s:%s/jsonrpc' % (remote.get('kodiuser'),
-                                      remote.get('kodipass'),
+                self.KODIURLS.append( 'http://%s:%s@%s:%s/jsonrpc' % (remote.get('kodiuser', default=config.Get( 'kodiuser' )),
+                                      remote.get('kodipass', default=config.Get( 'kodipass' )),
                                       remote.get('kodiuri'),
-                                      remote.get('kodiport')) )
+                                      remote.get('kodiport', default=config.Get( 'kodiport' ))) )
 
 
     def _create_fixes_default( self, default_fix_dir ):
