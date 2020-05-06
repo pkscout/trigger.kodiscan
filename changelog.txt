@@ -1,3 +1,6 @@
+v.1.1.4
+- fix for missed scans when two instances are running at the same time
+
 v.1.1.3
 - fixes for instances where renaming file doesn't work
 

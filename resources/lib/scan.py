@@ -1,4 +1,4 @@
-# v.1.1.5
+# v.1.1.6
 
 import atexit, argparse, os, random, sys, time
 import resources.config as config
@@ -43,12 +43,12 @@ atexit.register( _deletePID )
 
 class Main:
     def __init__( self ):
+        self._setPID()
         lw.log( ['script started'], 'info' )
         self._parse_argv()
         self._init_vars()
         if not (self.OID and self.DVR):
            return
-        self._setPID()
         if self.FILEPATH and config.Get( 'nas_mount' ):
             self._nas_copy()
         if self.FILEPATH:
