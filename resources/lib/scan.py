@@ -1,10 +1,11 @@
-# v.1.1.6
+# v.1.1.7
 
 import atexit, argparse, os, random, sys, time
 import resources.config as config
+import resourses.createstubs as createstubs
 from resources.lib.xlogger import Logger
 from resources.lib.url import URL
-from resources.lib.fileops import readFile, writeFile, deleteFile, moveFile, renameFile, checkPath
+from resources.lib.fileops import checkPath, deleteFile, moveFile, readFile, renameFile, setSafeName, writeFile 
 from resources.lib.transforms import replaceWords
 from resources.lib.dvrs import NextPVR
 import json as _json
@@ -92,7 +93,9 @@ class Main:
         if not self.DVR:
             lw.log( ['invalid DVR configuration, exiting'] )
             return
-        self.ILLEGALCHARS = list( '<>:"/\|?*' )
+        self.ILLEGALCHARS = config.Get( 'illegalchars' )
+        self.ILLEGALREPLACE = config.Get( 'illegalreplace' )
+        self.ENDREPLACE = config.Get( 'ednreplace' )
         self.FIXESDIR = os.path.join( p_folderpath, 'data', 'fixes' )
         exists, loglines = checkPath( os.path.join( self.FIXESDIR, 'default' ) )
         lw.log( loglines )
@@ -350,17 +353,6 @@ class Main:
             lw.log( ['unable to create thumnail: frame out of range'] )
 
 
-    def _set_safe_name( self, thename ):
-        s_name = ''
-        lw.log( ['the illegal characters are ', self.ILLEGALCHARS, 'the replacement is _'] )
-        for c in list( thename ):
-            if c in self.ILLEGALCHARS:
-                s_name = s_name + '_'
-            else:
-                s_name = s_name + c
-        return s_name
-
-
     def _special_epnumber( self, video_files ):
         # this gets the next available special season episode number for use
         highest_special_ep = ''
@@ -379,7 +371,9 @@ class Main:
 
 
     def _special_season( self, nfotemplate ):
-        newfileroot = '%s.S00E%s.%s' % (self.SHOW, self.EPISODEINFO['episode'].zfill( 2 ), self._set_safe_name( self.EPISODEINFO['title'] ))
+        safe_title, loglines = setSafeName( self.EPISODEINFO['title'], illegalchars=self.ILLEGALCHARS,
+                                            illegalreplace=self.ILLEGALREPLACE, endreplace=self.ENDREPLACE )
+        newfileroot = '%s.S00E%s.%s' % (self.SHOW, self.EPISODEINFO['episode'].zfill( 2 ), safe_title )
         newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
         newfilepath = os.path.join( self.FOLDERPATH, newfilename )
         newnfoname = newfileroot + '.nfo'

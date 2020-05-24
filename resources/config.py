@@ -1,4 +1,7 @@
-defaults = { 'dvr_type': 'nextpvr',
+defaults = { 'illegalchars': '<>:"/\|?*',
+             'illegalreplace': '_',
+             'endreplace': '',
+             'dvr_type': 'nextpvr',
              'gen_thumbs': True,
              'use_websockets': True,
              'narrow_time': True,
