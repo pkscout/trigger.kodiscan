@@ -1,6 +1,5 @@
-# v.1.1.7
 
-import atexit, argparse, json, os, random, sys, time, xmltodict
+import atexit, argparse, json, os, random, sys, time
 import resources.config as config
 from resources.lib.xlogger import Logger
 from resources.lib.apis import url
@@ -8,44 +7,38 @@ from resources.lib.transforms import replaceWords
 from resources.lib.fileops import *
 from resources.lib.dvrs import *
 
-lw = Logger( logfile=os.path.join( 'data', 'logs', 'logfile.log' ),
-             numbackups=config.Get( 'logbackups' ), logdebug=config.Get( 'debug' ) )
-
+USEWEBSOCKETS = False
 if config.Get( 'use_websockets' ):
     try:
         import websocket
-        use_websockets = True
+        USEWEBSOCKETS = True
     except ImportError:
-        lw.log( ['websocket-client not installed, falling back to JSON over HTTP'] )
-        use_websockets = False
-if not use_websockets:
+        USEWEBSOCKETS = False
+if not USEWEBSOCKETS:
     JSONURL = url.URL( 'json', headers={'content-type':'application/json'} )
+GENTHUMBS = False
 if config.Get( 'gen_thumbs' ):
     try:
         import cv2
-        gen_thumbs = True
+        GENTHUMBS = True
     except ImportError:
-        lw.log( ['cv2 not installed, disabling thumb generation'] )
-        gen_thumbs = False
+        GENTHUMBS = False
 
-def _deletePID():
-    success, loglines = deleteFile( pidfile )
-    lw.log (loglines )
-    lw.log( ['script finished'], 'info' )
-
-pid = str(os.getpid())
-pidfile = os.path.join( 'data', 'scan.pid' )
-atexit.register( _deletePID )
 
 
 class Main:
-    def __init__( self ):
+    def __init__( self, thepath ):
+        self.ROOTPATH = os.path.dirname( thepath )
+        self.PIDFILE = os.path.join( self.ROOTPATH, 'data', 'scan.pid' )
+        atexit.register( self._deletePID )
+        self.LW = Logger( logfile=os.path.join(self.ROOTPATH, 'data', 'logs', 'logfile.log' ),
+                          numbackups=config.Get( 'logbackups' ), logdebug=config.Get( 'debug' ) )
         self._setPID()
-        lw.log( ['script started'], 'info' )
         self._parse_argv()
         self._init_vars()
         if not (self.OID and self.DVR):
-           return
+            self.LW.log( ['do not have OID and DVR config necessary, aborting.'], 'info' )
+            return
         if self.FILEPATH:
             if self.TYPE == config.Get( 'tv_dir' ):
                 self._fixes()
@@ -55,48 +48,58 @@ class Main:
 
 
     def _setPID( self ):
+        self.LW.log( ['script started'], 'info' )
+        pid = str(os.getpid())
         random.seed()
         time.sleep( random.randint( 1, 10 ) )
         basetime = time.time()
-        while os.path.isfile( pidfile ):
+        while os.path.isfile( self.PIDFILE ):
             time.sleep( random.randint( 1, 3 ) )
             if time.time() - basetime > config.Get( 'aborttime' ):
                 err_str = 'taking too long for previous process to close - aborting attempt to do scan'
-                lw.log( [err_str] )
+                self.LW.log( [err_str], 'error' )
                 sys.exit( err_str )
-        lw.log( ['setting PID file'] )
-        success, loglines = writeFile( pid, pidfile, wtype='w' )
-        lw.log( loglines )
+        self.LW.log( ['setting PID file'] )
+        success, loglines = writeFile( pid, self.PIDFILE, wtype='w' )
+        self.LW.log( loglines )
+
+
+    def _deletePID( self ):
+        success, loglines = deleteFile( self.PIDFILE )
+        self.LW.log( loglines )
+        self.LW.log( ['script finished'], 'info' )
 
 
     def _parse_argv( self ):
+        self.LW.log( ['parsing command line arguments'], 'info' )
         parser = argparse.ArgumentParser()
         parser.add_argument( "theargs", help="the OID of the recording as passed by NPVR", nargs="+" )
         args = parser.parse_args()
         if len( args.theargs ) == 1:
-            lw.log( ['got %s from command line' % args.theargs[0] ] )
+            self.LW.log( ['got %s from command line' % args.theargs[0] ] )
         else:
-            lw.log( ['got something strange from the command line'] )
-            lw.log( args.theargs )
-            lw.log( ['will try and continue with the first argument'] )
+            self.LW.log( ['got something strange from the command line'] )
+            self.LW.log( args.theargs )
+            self.LW.log( ['will try and continue with the first argument'] )
         self.OID = args.theargs[0]
 
 
     def _init_vars( self ):
+        self.LW.log( ['initializing variables'], 'info' )
         self.DVR = self._pick_dvr()
         if not self.DVR:
-            lw.log( ['invalid DVR configuration, exiting'] )
+            self.LW.log( ['invalid DVR configuration, exiting'], 'info' )
             return
         self.ILLEGALCHARS = config.Get( 'illegalchars' )
         self.ILLEGALREPLACE = config.Get( 'illegalreplace' )
-        self.ENDREPLACE = config.Get( 'ednreplace' )
-        self.FIXESDIR = os.path.join( 'data', 'fixes' )
+        self.ENDREPLACE = config.Get( 'endreplace' )
+        self.FIXESDIR = os.path.join( self.ROOTPATH, 'data', 'fixes' )
         exists, loglines = checkPath( os.path.join( self.FIXESDIR, 'default' ) )
-        lw.log( loglines )
+        self.LW.log( loglines )
         if not exists:
             self._create_fixes_default( os.path.join( self.FIXESDIR, 'default' ) )
         self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo( self.OID )
-        lw.log( loglines )
+        self.LW.log( loglines )
         if not self.EPISODEINFO:
             self.DVR = False
             return
@@ -109,8 +112,8 @@ class Main:
             self.KODISOURCE = '%s/%s/%s' % (kodi_source_root, self.TYPE, self.SHOW )
         else:
             self.KODISOURCE = ''
-        lw.log( ['the filepath is ' + self.FILEPATH, 'the folderpath is ' + self.FOLDERPATH, 'the type is ' + self.TYPE])
-        if use_websockets:
+        self.LW.log( ['the filepath is ' + self.FILEPATH, 'the folderpath is ' + self.FOLDERPATH, 'the type is ' + self.TYPE])
+        if USEWEBSOCKETS:
             self.KODIURLS = ['ws://%s:%s/jsponrpc' % (config.Get( 'kodiuri' ), config.Get( 'kodiwsport' ) )]
             for remote in config.Get( 'remotekodilist' ):
                 self.KODIURLS.append( 'ws://%s:%s/jsponrpc' % (remote.get('kodiuri'), remote.get('kodiwsport', default=config.Get( 'kodiwsport' )) ) )
@@ -137,7 +140,7 @@ class Main:
                       '\t<aired>[AIRDATE]</aired>\r' + \
                       '</episodedetails>\r'
         success, loglines = writeFile( default_fix, os.path.join( default_fix_dir, 'episode.nfo' ), wtype='w' )
-        lw.log( loglines )
+        self.LW.log( loglines )
 
 
     def _pick_dvr( self ):
@@ -149,23 +152,24 @@ class Main:
 
 
     def _fixes( self ):
+        self.LW.log( ['creating needed files to import recording into Kodi'], 'info' )
         found_show = False
         try:
             shows = os.listdir( self.FIXESDIR )
         except FileNotFoundError:
-            lw.log( ['fixes directory does not exist for some reason'] )
+            self.LW.log( ['fixes directory does not exist for some reason'], 'error' )
             return
         except Exception as e:
-            lw.log( ['unknown error getting list of files in fixes directory', e] )
+            self.LW.log( ['unknown error getting list of files in fixes directory', e], 'error' )
             return
-        lw.log( ['there are potential shows to fix'] )
-        lw.log( shows )
+        self.LW.log( ['there are potential shows to process'], 'info' )
+        self.LW.log( shows )
         if self.SHOW.lower() in map( str.lower, shows ):
-            lw.log( ['matched %s with shows to fix' % self.SHOW] )
+            self.LW.log( ['matched %s with shows to process' % self.SHOW], 'info' )
             show_fixdir = os.path.join( self.FIXESDIR, self.SHOW )
             found_show = True
         elif "default" in map( str.lower, shows ):
-            lw.log( ['found default fix, applying to %s' % self.SHOW] )
+            self.LW.log( ['found default template, applying to %s' % self.SHOW], 'info' )
             show_fixdir = os.path.join( self.FIXESDIR, 'default' )
             found_show = True
         if found_show:
@@ -179,7 +183,7 @@ class Main:
             items = os.listdir( self.FOLDERPATH )
         except OSError:
             err_str = 'directory %s not found' % self.FOLDERPATH
-            lw.log( [err_str, 'script stopped'] )
+            self.LW.log( [err_str, 'script stopped'], 'error' )
             sys.exit( err_str )
         for item in items:
             fileroot, ext = os.path.splitext( item )
@@ -190,7 +194,7 @@ class Main:
                         item = fileroot[:-len( rename_end )] + config.Get( 'thumb_end' ) + ext
                         new_thumb = os.path.join( self.FOLDERPATH, item )
                         success, loglines = renameFile( old_thumb, new_thumb )
-                        lw.log( loglines )
+                        self.LW.log( loglines )
             if item in config.Get( 'protected_files' ):
                 pass
             elif ext in config.Get( 'video_exts' ):
@@ -207,8 +211,8 @@ class Main:
 
 
     def _nfo_prune( self, other_files, video_files ):
-        lw.log( ['checking files to see if they need to be deleted'] )
-        lw.log( ['other files:', other_files, 'video files:', video_files] )
+        self.LW.log( ['cleaning directory of unneeded files'], 'info' )
+        self.LW.log( ['other files:', other_files, 'video files:', video_files] )
         for one_file in other_files:
             match = False
             other_fileroot, throwaway = os.path.splitext( one_file )
@@ -218,27 +222,37 @@ class Main:
                     match = True
             if not match:
                 success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
-                lw.log( loglines )
+                self.LW.log( loglines )
 
 
     def _special_epnumber( self, items ):
         ep_num = 1
         for item in items:
+            self.LW.log( ['checking file %s' % item] )
             fileroot, ext = os.path.splitext( item )
             if ext == '.nfo':
+                self.LW.log( ['file is a nfo file'] )
                 loglines, results = readFile( os.path.join( self.FOLDERPATH, item ) )
-                lw.log( loglines )
-                result_dict = xmltodict.parse( results )
-                if result_dict.get( 'season' ) == 0:
-                    result_epnum = result_dict.get( 'epsiode', 0 )
-                    if result_epnum > ep_num:
-                        ep_num = result_epnum
+                self.LW.log( loglines )
+                try:
+                    season = int( re.findall( '.*<season>(.*)</season>', results )[0] )
+                    episode = int( re.findall( '.*<episode>(.*)</episode>', results )[0] )
+                except IndexError:
+                    season = None
+                    episode = 0
+                self.LW.log( ['season is %s and episode is %s' %( str( season ), str( episode ) )] )
+                if season == 0:
+                    self.LW.log( ['nfo file has a 0 season'] )
+                    if episode >= ep_num:
+                        ep_num = episode + 1
+                    self.LW.log( ['epnum is now %s' % str( ep_num )] )
         ep_num = str( ep_num )
-        lw.log( ['the episode number calculated for the special season is %s' % ep_num] )
+        self.LW.log( ['show had no season or episode, setting season to 0 and epsiode to %s' % ep_num], 'info' )
         return ep_num
 
 
     def _write_nfofile( self, nfotemplate, newnfoname ):
+        self.LW.log( ['writing nfo file'], 'info' )
         newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
         replacement_dic = {
             '[SEASON]': self.EPISODEINFO['season'],
@@ -247,38 +261,38 @@ class Main:
             '[DESC]' : self.EPISODEINFO['description'],
             '[AIRDATE]' : self.EPISODEINFO["airdate"]}
         exists, loglines = checkPath( newnfopath, createdir=False )
-        lw.log( loglines )
+        self.LW.log( loglines )
         if exists:
             success, loglines = deleteFile( newnfopath )
-            lw.log( loglines )
+            self.LW.log( loglines )
         loglines, fin = readFile( nfotemplate )
-        lw.log (loglines )
+        self.LW.log (loglines )
         if fin:
             newnfo = replaceWords( fin, replacement_dic )
             success, loglines = writeFile( newnfo, newnfopath, wtype='w' )
-            lw.log( loglines )
+            self.LW.log( loglines )
 
 
     def _generate_thumbnail( self, videopath, thumbpath ):
-        if not gen_thumbs:
-            lw.log( ['thumbnail generation disabled in settings'] )
+        if not GENTHUMBS:
+            self.LW.log( ['thumbnail generation disabled in settings'], 'info' )
             return
         exists, loglines = checkPath( thumbpath, createdir=False )
-        lw.log( loglines )
+        self.LW.log( loglines )
         if exists:
             if self.SHOW not in config.Get( 'force_thumbs' ):
-                lw.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'] )
+                self.LW.log( ['thumbnail exists and show is not in force_thumbs, skipping thumbnail generation'], 'info' )
                 return
             else:
-                lw.log( ['thumbnail exists but show is in force_thumbs, creating thumbnail'] )
+                self.LW.log( ['thumbnail exists but show is in force_thumbs, creating thumbnail'], 'info' )
         else:
-            lw.log( ['thumb does not exist, creating thumbnail'] )
+            self.LW.log( ['thumb does not exist, creating thumbnail'], 'info' )
         vidcap = cv2.VideoCapture( videopath )
         num_frames = int( vidcap.get( cv2.CAP_PROP_FRAME_COUNT ) )
         fps = int( vidcap.get( cv2.CAP_PROP_FPS ) )
-        lw.log( ['got numframes: %s and fps: %s' % (str( num_frames ), str( fps ))] )
+        self.LW.log( ['got numframes: %s and fps: %s' % (str( num_frames ), str( fps ))], 'info' )
         if num_frames < 30 and fps < 30:
-            lw.log( ['probably an error when reading file with opencv, skipping thumbnail generation'] )
+            self.LW.log( ['probably an error when reading file with opencv, skipping thumbnail generation'], 'error' )
             return
         if config.Get( 'narrow_time' ):
             custom_narrow = config.Get( 'custom_narrow' )
@@ -295,21 +309,22 @@ class Main:
             frame_end = num_frames - config.Get( 'end_pad_time' )*60*fps
         random.seed()
         frame_cap = random.randint( frame_start, frame_end )
-        lw.log( ['capturing frame %s from range %s - %s' % (str( frame_cap ), str( frame_start ), str( frame_end ))] )
+        self.LW.log( ['capturing frame %s from range %s - %s' % (str( frame_cap ), str( frame_start ), str( frame_end ))], 'info' )
         vidcap.set( cv2.CAP_PROP_POS_FRAMES,frame_cap )
         success, image = vidcap.read()
         if success:
             success, buffer = cv2.imencode(".jpg", image)
             if success:
                 success, loglines = writeFile( buffer, thumbpath, wtype='wb' )
-                lw.log( loglines )
+                self.LW.log( loglines )
             else:
-                lw.log( ['unable to encode thumbnail'] )
+                self.LW.log( ['unable to encode thumbnail'], 'error' )
         else:
-            lw.log( ['unable to create thumnail: frame out of range'] )
+            self.LW.log( ['unable to create thumnail: frame out of range'], 'error' )
 
 
     def _trigger_scan( self ):
+        self.LW.log( ['triggering Kodi scan'], 'info' )
         jsondict = {}
         jsondict['id'] = '1'
         jsondict['jsonrpc'] = '2.0'
@@ -320,34 +335,34 @@ class Main:
             jsondict['params'] = {"directory":self.KODISOURCE + '/'}
         jsondata = json.dumps( jsondict )
         time.sleep( config.Get( 'scan_delay' ) )
-        if use_websockets:
+        if USEWEBSOCKETS:
             self._trigger_via_websocket( jsondata )
         else:
             time.sleep( 20 ) #this is to allow time for a previous scan to finish before starting the next process
             for kodiurl in self.KODIURLS:
                 success, loglines, data = JSONURL.Post( kodiurl, data=jsondata )
-                lw.log( loglines )
+                self.LW.log( loglines )
 
 
     def _trigger_via_websocket( self, jsondata ):
         def on_message(ws, message):
-            lw.log( ['got back: ' + message] )
+            self.LW.log( ['got back: ' + message] )
             if "VideoLibrary.OnScanFinished" in message:
-                lw.log( ['got back scan complete message, attempting to close websocket'] )
+                self.LW.log( ['got back scan complete message, attempting to close websocket'], 'info' )
                 ws.close()
             ws_aborttime = config.Get( 'aborttime' ) - 5
             if time.time() - self.WSTIME > ws_aborttime:
                 raise WebSocketException( "process has taken longer than %s seconds - terminating" % str( ws_aborttime ) )
         def on_error(ws, error):
-            lw.log( [error] )
+            self.LW.log( [error], 'error' )
             ws.close()
         def on_close(ws):
-            lw.log( ['websocket connection closed'] )
+            self.LW.log( ['websocket connection closed'], 'info' )
         def on_open(ws):
-            lw.log( ['sending: ' + jsondata] )
+            self.LW.log( ['sending: ' + jsondata] )
             ws.send( jsondata )
         for kodiurl in self.KODIURLS:
             ws = websocket.WebSocketApp( kodiurl, on_message = on_message, on_error = on_error, on_open = on_open, on_close = on_close )
-            lw.log( ['websocket connection opening'] )
+            self.LW.log( ['websocket connection opening'], 'info' )
             self.WSTIME = time.time()
             ws.run_forever()
