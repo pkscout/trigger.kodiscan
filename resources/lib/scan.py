@@ -62,11 +62,17 @@ class Main:
         self.LW.log( ['setting PID file'] )
         success, loglines = writeFile( pid, self.PIDFILE, wtype='w' )
         self.LW.log( loglines )
+        if not success:
+            err_str = 'unable to write pid file'
+            self.LW.log( [err_str, 'script stopped'], 'error' )
+            sys.exit( err_str )
 
 
     def _deletePID( self ):
         success, loglines = deleteFile( self.PIDFILE )
         self.LW.log( loglines )
+        if not success:
+            self.LW.log( ['ubale to delete pid file'] )
         self.LW.log( ['script finished'], 'info' )
 
 
