@@ -36,15 +36,11 @@ class Main:
         self._setPID()
         self._parse_argv()
         self._init_vars()
-        if not (self.OID and self.DVR):
-            self.LW.log( ['do not have OID and DVR config necessary, aborting.'], 'info' )
-            return
-        if self.FILEPATH:
-            if self.TYPE == config.Get( 'tv_dir' ):
-                self._fixes()
+        if self.TYPE == config.Get( 'tv_dir' ):
+            self._fixes()
+        self._trigger_scan()
+        if config.Get( 'doubletap' ):
             self._trigger_scan()
-            if config.Get( 'doubletap' ):
-                self._trigger_scan()
 
 
     def _setPID( self ):
@@ -94,8 +90,23 @@ class Main:
         self.LW.log( ['initializing variables'], 'info' )
         self.DVR = self._pick_dvr()
         if not self.DVR:
-            self.LW.log( ['invalid DVR configuration, exiting'], 'info' )
-            return
+            err_str = 'invalid DVR configuration, exiting'
+            self.LW.log( [err_str], 'error' )
+            sys.exit( err_str )
+        self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo( self.OID )
+        self.LW.log( loglines )
+        if not self.EPISODEINFO:
+            err_str = 'no episode information returned for OID of %s, exiting' % self.OID
+            self.LW.log( [err_str], 'error' )
+            sys.exit( err_str )
+        self.FILEPATH = self.EPISODEINFO['filepath']
+        if not self.FILENAME:
+            err_str = 'no file path for recording, exiting'
+            self.LW.log( [err_str], 'error' )
+            sys.exit( err_str )
+        self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
+        remainder, self.SHOW = os.path.split( self.FOLDERPATH )
+        self.TYPE = os.path.split( remainder )[1]
         self.ILLEGALCHARS = config.Get( 'illegalchars' )
         self.ILLEGALREPLACE = config.Get( 'illegalreplace' )
         self.ENDREPLACE = config.Get( 'endreplace' )
@@ -104,15 +115,6 @@ class Main:
         self.LW.log( loglines )
         if not exists:
             self._create_fixes_default( os.path.join( self.FIXESDIR, 'default' ) )
-        self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo( self.OID )
-        self.LW.log( loglines )
-        if not self.EPISODEINFO:
-            self.DVR = False
-            return
-        self.FILEPATH = self.EPISODEINFO['filepath']
-        self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
-        remainder, self.SHOW = os.path.split( self.FOLDERPATH )
-        self.TYPE = os.path.split( remainder )[1]
         kodi_source_root = config.Get( 'kodi_source_root' )
         if kodi_source_root:
             self.KODISOURCE = '%s/%s/%s' % (kodi_source_root, self.TYPE, self.SHOW )
