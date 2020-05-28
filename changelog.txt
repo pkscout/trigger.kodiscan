@@ -1,3 +1,7 @@
+v.2.0.0
+- changed to using NextPVR5 API calls
+- no longer move or rename files
+
 v.1.1.6
 - updated common libraries
 - standardized method for creating an OS safe filename

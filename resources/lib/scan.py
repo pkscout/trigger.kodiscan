@@ -1,19 +1,15 @@
 # v.1.1.7
 
-import atexit, argparse, os, random, sys, time
+import atexit, argparse, json, os, random, sys, time, xmltodict
 import resources.config as config
-import resourses.createstubs as createstubs
 from resources.lib.xlogger import Logger
-from resources.lib.url import URL
-from resources.lib.fileops import checkPath, deleteFile, moveFile, readFile, renameFile, setSafeName, writeFile 
+from resources.lib.apis import url
 from resources.lib.transforms import replaceWords
-from resources.lib.dvrs import NextPVR
-import json as _json
+from resources.lib.fileops import *
+from resources.lib.dvrs import *
 
-p_folderpath, p_filename = os.path.split( sys.argv[0] )
-logpath = os.path.join( p_folderpath, 'data', 'logs', '' )
-checkPath( logpath )
-lw = Logger( logfile=os.path.join( logpath, 'logfile.log' ), numbackups=config.Get( 'logbackups' ), logdebug=config.Get( 'debug' ) )
+lw = Logger( logfile=os.path.join( 'data', 'logs', 'logfile.log' ),
+             numbackups=config.Get( 'logbackups' ), logdebug=config.Get( 'debug' ) )
 
 if config.Get( 'use_websockets' ):
     try:
@@ -23,7 +19,7 @@ if config.Get( 'use_websockets' ):
         lw.log( ['websocket-client not installed, falling back to JSON over HTTP'] )
         use_websockets = False
 if not use_websockets:
-    JSONURL = URL( 'json', headers={'content-type':'application/json'} )
+    JSONURL = url.URL( 'json', headers={'content-type':'application/json'} )
 if config.Get( 'gen_thumbs' ):
     try:
         import cv2
@@ -38,7 +34,7 @@ def _deletePID():
     lw.log( ['script finished'], 'info' )
 
 pid = str(os.getpid())
-pidfile = os.path.join( p_folderpath, 'data', 'scan.pid' )
+pidfile = os.path.join( 'data', 'scan.pid' )
 atexit.register( _deletePID )
 
 
@@ -50,8 +46,6 @@ class Main:
         self._init_vars()
         if not (self.OID and self.DVR):
            return
-        if self.FILEPATH and config.Get( 'nas_mount' ):
-            self._nas_copy()
         if self.FILEPATH:
             if self.TYPE == config.Get( 'tv_dir' ):
                 self._fixes()
@@ -96,12 +90,12 @@ class Main:
         self.ILLEGALCHARS = config.Get( 'illegalchars' )
         self.ILLEGALREPLACE = config.Get( 'illegalreplace' )
         self.ENDREPLACE = config.Get( 'ednreplace' )
-        self.FIXESDIR = os.path.join( p_folderpath, 'data', 'fixes' )
+        self.FIXESDIR = os.path.join( 'data', 'fixes' )
         exists, loglines = checkPath( os.path.join( self.FIXESDIR, 'default' ) )
         lw.log( loglines )
         if not exists:
             self._create_fixes_default( os.path.join( self.FIXESDIR, 'default' ) )
-        self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo()
+        self.EPISODEINFO, loglines = self.DVR.GetRecordingInfo( self.OID )
         lw.log( loglines )
         if not self.EPISODEINFO:
             self.DVR = False
@@ -149,36 +143,9 @@ class Main:
     def _pick_dvr( self ):
         dvr_type = config.Get( 'dvr_type' ).lower()
         if dvr_type == 'nextpvr':
-            return NextPVR( self.OID, config )
+            return nextpvr.DVR( config )
         else:
             return None
-
-
-    def _nas_copy( self ):
-        try:
-            lw.log( ['getting list of files from ' + self.FOLDERPATH] )
-            files = os.listdir( self.FOLDERPATH )
-        except OSError:
-            lw.log( ['directory %s not found' % self.FOLDERPATH] )
-            return
-        lw.log( ['found: ', files] )
-        for onefile in files:
-            if (os.path.splitext( onefile )[1] in config.Get( 'video_exts' )):
-                filename = onefile
-            org = os.path.join( self.FOLDERPATH, onefile )
-            dest = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, onefile )
-            exists, loglines = checkPath( os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW) )
-            lw.log( loglines )
-            success, loglines = moveFile( org, dest )
-            lw.log( loglines )
-            if not success:
-                break
-        if not success:
-            self.FILEPATH = ''
-        else:
-            self.FILEPATH = os.path.join( config.Get( 'nas_mount' ), self.TYPE, self.SHOW, filename )
-            self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
-            self.DVR.UpdateDVR( self.FILEPATH )
 
 
     def _fixes( self ):
@@ -202,50 +169,7 @@ class Main:
             show_fixdir = os.path.join( self.FIXESDIR, 'default' )
             found_show = True
         if found_show:
-            nfopath = os.path.join( show_fixdir, 'episode.nfo')
-            jsonpath = os.path.join( show_fixdir, 'episode.json')
-            exists, loglines = checkPath( jsonpath, createdir=False )
-            lw.log( loglines )
-            if exists:
-               self._jsonfix( jsonpath )
-               return
-            exists, loglines = checkPath( nfopath, createdir=False )
-            lw.log( loglines )
-            if exists:
-               self._nfofix( nfopath )
-
-
-    def _jsonfix( self, jsonpath ):
-        try:
-            items = os.listdir( self.FOLDERPATH )
-        except OSError:
-            err_str = 'directory %s not found' % self.FOLDERPATH
-            lw.log( [err_str, 'script stopped'] )
-            sys.exit( err_str )
-        jsondata = readFile( jsonpath )
-        lw.log( ['-----JSON data-----', jsondata[1]] )
-        episodes = _json.loads( jsondata[1] )
-        for item in items:
-            fileroot, ext = os.path.splitext( item )
-            processfilepath = os.path.join( self.FOLDERPATH, item )
-            last_mod = time.strftime( '%Y-%m-%d', time.localtime( os.path.getmtime( processfilepath ) ) )
-            if ext in config.Get( 'video_exts' ):
-                for key in episodes:
-                    episode = episodes[key]
-                    lw.log( ['comparing file last mod of %s with json record date of %s' % (last_mod, episode['record-date'])] )
-                    if last_mod == episode['record-date']:
-                        newfilename = '%s.S%sE%s.%s%s' % (self.SHOW, episode['season'], episode['episode'], episode['title'], ext)
-                        newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-                        exists, loglines = checkPath( newfilepath, createdir=False )
-                        lw.log( loglines )
-                        if not exists:
-                            success, loglines = renameFile( processfilepath, newfilepath )
-                            lw.log( loglines )
-                            if success:
-                                self.DVR.UpdateDVR( newfilepath )
-                        else:
-                            lw.log( ['%s already has the correct file name' % processfilepath] )
-                        break
+            self._nfofix( os.path.join( show_fixdir, 'episode.nfo') )
 
 
     def _nfofix( self, nfotemplate ):
@@ -274,18 +198,12 @@ class Main:
             else:
                 other_files.append( item )
         self._nfo_prune( other_files, video_files )
-        self._nfo_create( video_files, nfotemplate)
-
-
-    def _nfo_create( self, video_files, nfotemplate ):
         if self.EPISODEINFO['season'] == '0':
-            self.EPISODEINFO['episode'] = self._special_epnumber( video_files )
-            self._special_season( nfotemplate )
-        else:
-            self._write_nfofile( nfotemplate, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
-            self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ),
-                                      os.path.join( self.FOLDERPATH,
-                                      os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
+            self.EPISODEINFO['episode'] = self._special_epnumber( items )
+        self._write_nfofile( nfotemplate, os.path.splitext( self.FILEPATH )[0] + '.nfo' )
+        self._generate_thumbnail( os.path.join( self.FOLDERPATH, self.FILEPATH ),
+                                  os.path.join( self.FOLDERPATH,
+                                  os.path.splitext( self.FILEPATH )[0] + '-thumb.jpg' ) )
 
 
     def _nfo_prune( self, other_files, video_files ):
@@ -301,6 +219,44 @@ class Main:
             if not match:
                 success, loglines = deleteFile( os.path.join( self.FOLDERPATH, one_file ) )
                 lw.log( loglines )
+
+
+    def _special_epnumber( self, items ):
+        ep_num = 1
+        for item in items:
+            fileroot, ext = os.path.splitext( item )
+            if ext == '.nfo':
+                loglines, results = readFile( os.path.join( self.FOLDERPATH, item ) )
+                lw.log( loglines )
+                result_dict = xmltodict.parse( results )
+                if result_dict.get( 'season' ) == 0:
+                    result_epnum = result_dict.get( 'epsiode', 0 )
+                    if result_epnum > ep_num:
+                        ep_num = result_epnum
+        ep_num = str( ep_num )
+        lw.log( ['the episode number calculated for the special season is %s' % ep_num] )
+        return ep_num
+
+
+    def _write_nfofile( self, nfotemplate, newnfoname ):
+        newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
+        replacement_dic = {
+            '[SEASON]': self.EPISODEINFO['season'],
+            '[EPISODE]' : self.EPISODEINFO['episode'],
+            '[TITLE]' : self.EPISODEINFO['title'],
+            '[DESC]' : self.EPISODEINFO['description'],
+            '[AIRDATE]' : self.EPISODEINFO["airdate"]}
+        exists, loglines = checkPath( newnfopath, createdir=False )
+        lw.log( loglines )
+        if exists:
+            success, loglines = deleteFile( newnfopath )
+            lw.log( loglines )
+        loglines, fin = readFile( nfotemplate )
+        lw.log (loglines )
+        if fin:
+            newnfo = replaceWords( fin, replacement_dic )
+            success, loglines = writeFile( newnfo, newnfopath, wtype='w' )
+            lw.log( loglines )
 
 
     def _generate_thumbnail( self, videopath, thumbpath ):
@@ -353,42 +309,6 @@ class Main:
             lw.log( ['unable to create thumnail: frame out of range'] )
 
 
-    def _special_epnumber( self, video_files ):
-        # this gets the next available special season episode number for use
-        highest_special_ep = ''
-        for videofile in video_files:
-            if videofile.startswith( '%s.S00' % self.SHOW ):
-                highest_special_ep = videofile
-        if highest_special_ep:
-            epsplit = highest_special_ep.split( '.' )
-            for onepart in epsplit:
-                if onepart.startswith( 'S00' ):
-                    epnum = str( int( onepart[4:] ) + 1 )
-        else:
-            epnum = '1'
-        lw.log( ['the episode number calculated for the special season is ' + epnum] )
-        return epnum
-
-
-    def _special_season( self, nfotemplate ):
-        safe_title, loglines = setSafeName( self.EPISODEINFO['title'], illegalchars=self.ILLEGALCHARS,
-                                            illegalreplace=self.ILLEGALREPLACE, endreplace=self.ENDREPLACE )
-        newfileroot = '%s.S00E%s.%s' % (self.SHOW, self.EPISODEINFO['episode'].zfill( 2 ), safe_title )
-        newfilename = newfileroot + '.' + self.FILEPATH.split( '.' )[-1]
-        newfilepath = os.path.join( self.FOLDERPATH, newfilename )
-        newnfoname = newfileroot + '.nfo'
-        self._write_nfofile( nfotemplate, newnfoname )
-        success, loglines = renameFile( self.FILEPATH, newfilepath )
-        lw.log( loglines )
-        if not success:
-            success, loglines = moveFile( self.FILEPATH, newfilepath )
-            lw.log( loglines )
-        if success:
-            self._generate_thumbnail( newfilepath, os.path.join( self.FOLDERPATH, newfileroot + '-thumb.jpg' ) )
-            loglines = self.DVR.UpdateDVR( newfilepath )
-            lw.log( loglines )
-
-
     def _trigger_scan( self ):
         jsondict = {}
         jsondict['id'] = '1'
@@ -398,7 +318,7 @@ class Main:
             jsondict['params'] = {"directory":self.FOLDERPATH}
         else:
             jsondict['params'] = {"directory":self.KODISOURCE + '/'}
-        jsondata = _json.dumps( jsondict )
+        jsondata = json.dumps( jsondict )
         time.sleep( config.Get( 'scan_delay' ) )
         if use_websockets:
             self._trigger_via_websocket( jsondata )
@@ -431,24 +351,3 @@ class Main:
             lw.log( ['websocket connection opening'] )
             self.WSTIME = time.time()
             ws.run_forever()
-
-
-    def _write_nfofile( self, nfotemplate, newnfoname ):
-        newnfopath = os.path.join( self.FOLDERPATH, newnfoname )
-        replacement_dic = {
-            '[SEASON]': self.EPISODEINFO['season'],
-            '[EPISODE]' : self.EPISODEINFO['episode'],
-            '[TITLE]' : self.EPISODEINFO['title'],
-            '[DESC]' : self.EPISODEINFO['description'],
-            '[AIRDATE]' : self.EPISODEINFO["airdate"]}
-        exists, loglines = checkPath( newnfopath, createdir=False )
-        lw.log( loglines )
-        if exists:
-            success, loglines = deleteFile( newnfopath )
-            lw.log( loglines )
-        loglines, fin = readFile( nfotemplate )
-        lw.log (loglines )
-        if fin:
-            newnfo = replaceWords( fin, replacement_dic )
-            success, loglines = writeFile( newnfo, newnfopath, wtype='w' )
-            lw.log( loglines )
