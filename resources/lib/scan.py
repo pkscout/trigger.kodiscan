@@ -100,7 +100,7 @@ class Main:
             self.LW.log( [err_str], 'error' )
             sys.exit( err_str )
         self.FILEPATH = self.EPISODEINFO['filepath']
-        if not self.FILENAME:
+        if not self.FILEPATH:
             err_str = 'no file path for recording, exiting'
             self.LW.log( [err_str], 'error' )
             sys.exit( err_str )
