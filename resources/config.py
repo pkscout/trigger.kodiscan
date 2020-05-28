@@ -1,7 +1,4 @@
-defaults = { 'illegalchars': '<>:"/\|?*',
-             'illegalreplace': '_',
-             'endreplace': '',
-             'dvr_type': 'nextpvr',
+defaults = { 'dvr_type': 'nextpvr',
              'dvr_host': '127.0.0.1',
              'dvr_port': '8866',
              'dvr_user': '',

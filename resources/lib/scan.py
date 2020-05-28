@@ -107,9 +107,6 @@ class Main:
         self.FOLDERPATH, filename = os.path.split( self.FILEPATH )
         remainder, self.SHOW = os.path.split( self.FOLDERPATH )
         self.TYPE = os.path.split( remainder )[1]
-        self.ILLEGALCHARS = config.Get( 'illegalchars' )
-        self.ILLEGALREPLACE = config.Get( 'illegalreplace' )
-        self.ENDREPLACE = config.Get( 'endreplace' )
         self.FIXESDIR = os.path.join( self.ROOTPATH, 'data', 'fixes' )
         exists, loglines = checkPath( os.path.join( self.FIXESDIR, 'default' ) )
         self.LW.log( loglines )
