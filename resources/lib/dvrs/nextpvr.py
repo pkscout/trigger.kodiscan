@@ -6,7 +6,7 @@ import re, time
 class DVR:
 
     def __init__( self, config ):
-        self.APICALL = nextpvr.API( config.Get( 'dvr_host' ), config.Get( 'dvr_port' ), config.Get( 'dvr_auth' ) )
+        self.APICALL = nextpvr.API( config.Get( 'dvr_host' ), config.Get( 'dvr_port' ), config.Get( 'dvr_auth' ), 'trigger.kodiscan' )
 
 
     def GetRecordingInfo( self, oid ):
