@@ -1,6 +1,6 @@
 v.2.0.1
 - updated nextpvr api so script can use a custom device name during login
-- fix for more consistent logging of utf-8 
+- fix for more consistent logging of utf-8
 
 v.2.0.0
 - changed to using NextPVR5 API calls
