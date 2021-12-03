@@ -332,7 +332,8 @@ class Main:
             frame_start = config.Get('begin_pad_time')*60*fps
             frame_end = num_frames - config.Get('end_pad_time')*60*fps
         random.seed()
-        frame_cap = random.randint(frame_start, frame_end)
+        frame_cap = self._comskip_adjust(
+            random.randint(frame_start, frame_end), fps)
         self.LW.log(['capturing frame %s from range %s - %s' %
                     (str(frame_cap), str(frame_start), str(frame_end))], 'info')
         vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame_cap)
@@ -348,17 +349,44 @@ class Main:
             self.LW.log(
                 ['unable to create thumnail: frame out of range'], 'error')
 
+    def _comskip_adjust(self, frame, fps):
+        if not config.Get('comskip_check'):
+            self.LW.log(['comskip based adjustment disabled'])
+            return frame
+        comskip_file = os.path.join(self.FOLDERPATH, os.path.splitext(self.FILEPATH)[0] + '.txt')
+        loglines, results=readFile(comskip_file)
+        self.LW.log(loglines)
+        if not results:
+            return frame
+        for line in results.splitlines()[2:]:
+            commerical_frames=line.split('\t')
+            if len(commerical_frames) == 2:
+                com_start=int(commerical_frames[0])
+                com_end=int(commerical_frames[1])
+                self.LW.log(['checking for frame between %s and %s' % (
+                    commerical_frames[0], commerical_frames[1])])
+                if frame > com_end:
+                    continue
+                elif frame >= com_start:
+                    self.LW.log(
+                        ['frame in commercial break, forwarding to end of break'])
+                    frame=com_end + fps * config.Get('comskip_padding')
+                    break
+                else:
+                    break
+        return frame
+
     def _trigger_scan(self):
         self.LW.log(['triggering Kodi scan'], 'info')
-        jsondict = {}
-        jsondict['id'] = '1'
-        jsondict['jsonrpc'] = '2.0'
-        jsondict['method'] = "VideoLibrary.Scan"
+        jsondict={}
+        jsondict['id']='1'
+        jsondict['jsonrpc']='2.0'
+        jsondict['method']="VideoLibrary.Scan"
         if self.KODISOURCE == '':
-            jsondict['params'] = {"directory": self.FOLDERPATH}
+            jsondict['params']={"directory": self.FOLDERPATH}
         else:
-            jsondict['params'] = {"directory": self.KODISOURCE + '/'}
-        jsondata = json.dumps(jsondict)
+            jsondict['params']={"directory": self.KODISOURCE + '/'}
+        jsondata=json.dumps(jsondict)
         time.sleep(config.Get('scan_delay'))
         if USEWEBSOCKETS:
             self._trigger_via_websocket(jsondata)
@@ -366,7 +394,7 @@ class Main:
             # this is to allow time for a previous scan to finish before starting the next process
             time.sleep(20)
             for kodiurl in self.KODIURLS:
-                success, loglines, data = JSONURL.Post(kodiurl, data=jsondata)
+                success, loglines, data=JSONURL.Post(kodiurl, data = jsondata)
                 self.LW.log(loglines)
 
     def _trigger_via_websocket(self, jsondata):
@@ -376,7 +404,7 @@ class Main:
                 self.LW.log(
                     ['got back scan complete message, attempting to close websocket'], 'info')
                 ws.close()
-            ws_aborttime = config.Get('aborttime') - 5
+            ws_aborttime=config.Get('aborttime') - 5
             if time.time() - self.WSTIME > ws_aborttime:
                 raise WebSocketException(
                     "process has taken longer than %s seconds - terminating" % str(ws_aborttime))
@@ -392,7 +420,7 @@ class Main:
             self.LW.log(['sending: ' + jsondata])
             ws.send(jsondata)
         for kodiurl in self.KODIURLS:
-            ws = websocket.WebSocketApp(
+            ws=websocket.WebSocketApp(
                 kodiurl, on_message=on_message, on_error=on_error, on_open=on_open, on_close=on_close)
             self.LW.log(['websocket connection opening'], 'info')
             self.WSTIME = time.time()

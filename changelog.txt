@@ -1,3 +1,7 @@
+v.2.1.0
+- changed default window for selection to between 14 and 16 minutes
+- added ability (on by default) to use comskip data to miss commercials
+
 v.2.0.1
 - updated nextpvr api so script can use a custom device name during login
 - fix for more consistent logging of utf-8
